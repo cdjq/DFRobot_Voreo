@@ -44,7 +44,7 @@
 #define CRC16_INITIAL_VALUE 0xFFFF
 
 
-#define ENABLE_DBG ///< Enable this macro to see the detailed running process of the program
+//#define ENABLE_DBG ///< Enable this macro to see the detailed running process of the program
 #ifdef ENABLE_DBG
 #define DBG(...) {Serial.print("[");Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
 #else

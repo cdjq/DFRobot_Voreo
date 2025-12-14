@@ -16,6 +16,7 @@
  void setup()
  {
      Serial.begin(115200);
+     Serial.println("DFRobot_Voero_I2C example");
      while(!voero.begin())
      {
          Serial.println("Voero begin failed");
