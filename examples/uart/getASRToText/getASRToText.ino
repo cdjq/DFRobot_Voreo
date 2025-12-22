@@ -48,7 +48,7 @@
  void loop()
  {
      voero.sendText(text);
-     delay(100);
+     delay(8000);
      if(voero.queryText())
      {
          String text = voero.requestText();
