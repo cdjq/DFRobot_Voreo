@@ -27,13 +27,13 @@
  void loop()
  {
      voero.sendText(text);
-     delay(100);
+     delay(8000);
      if(voero.queryText())
      {
-         String text = voero.requestText();
-         Serial.println(text);
+        String text = voero.requestText();
+        Serial.println(text);
      }else{
-         Serial.println("queryText failed");
+        Serial.println("queryText failed");
      }
      delay(100);
  }

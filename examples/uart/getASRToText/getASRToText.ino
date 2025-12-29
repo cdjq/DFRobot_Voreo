@@ -43,6 +43,7 @@
          Serial.println("Voero begin failed");
          delay(1000);
      }
+    delay(1000);
  }
  
  void loop()
@@ -51,10 +52,10 @@
      delay(8000);
      if(voero.queryText())
      {
-         String text = voero.requestText();
-         Serial.println(text);
+        String text = voero.requestText();
+        Serial.println(text);
      }else{
-         Serial.println("queryText failed");
+        Serial.println("queryText failed");
      }
  
      delay(100);

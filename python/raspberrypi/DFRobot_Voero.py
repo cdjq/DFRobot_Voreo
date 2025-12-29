@@ -46,7 +46,7 @@ VOERO_CMD_GET_TEXT = 0x02  # Get text command
 VOERO_CMD_SEND_TEXT = 0x03  # Send text command
 VOERO_CMD_ANGLE = 0x04  # Angle command
 VOERO_CMD_DISTANCE = 0x05  # Distance command
-VOERO_CMD_SET_SPEED = 0x06  # Set speed command
+VOERO_CMD_SET_SPEED = 0x07  # Set speed command
 
 VOERO_REQUEST_TIMEOUT = 10000  # Request timeout (ms)
 
@@ -355,13 +355,14 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
     
     def read_data(self, cmd: int) -> Optional[bytearray]:
         """Read data from the Voero via I2C"""
-        CMD_QUERY_LENGTH = 0x21  # 查询数据长度命令
-        MAX_RETRY_COUNT = 10  # 最大重试次数
-        MAX_I2C_PACKET_SIZE = 32  # I2C最大数据包长度
-        INVALID_LENGTH = 0xFFFF  # 无效长度标识
-        RESPONSE_DELAY_MS = 0.1  # 响应延迟(s)
+        # 常量定义
+        CMD_QUERY_LENGTH = 0x21        # 查询数据长度命令
+        MAX_RETRY_COUNT = 10           # 最大重试次数
+        MAX_I2C_PACKET_SIZE = 32       # I2C最大数据包长度
+        INVALID_LENGTH = 0xFFFF        # 无效长度标识
+        RESPONSE_DELAY_MS = 0.1        # 响应延迟(s)
         
-        # Build and send initial request frame
+        # 构建并发送初始请求帧
         request_buf = build_request_frame(cmd)
         try:
             if len(request_buf) > 0:
@@ -372,68 +373,73 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
         except Exception as e:
             dbg(f"Failed to send request frame: {e}")
             return None
-        
         time.sleep(RESPONSE_DELAY_MS)
         
-        # Initialize state variables
+        # 初始化状态变量
         p_buf = None
         request_state = [DATA_STATIC_HEAD]
         length = [0]
         data_length = [0]
         retry_count = 0
         
-        # Main loop: try to read data
+        # 主循环：尝试读取数据
         while retry_count < MAX_RETRY_COUNT:
-            # Query data length
+            # # 查询数据长度
+            # try:
+            #     self._bus.write_byte(self._addr, CMD_QUERY_LENGTH)
+            # except Exception as e:
+            #     dbg(f"Failed to query length: {e}")
+            #     retry_count += 1
+            #     time.sleep(RESPONSE_DELAY_MS)
+            #     continue
+            # 读取长度字节（在一个I2C事务中读取2个字节，模拟requestFrom(2)）
             try:
-                self._bus.write_byte(self._addr, CMD_QUERY_LENGTH)
-            except Exception as e:
-                dbg(f"Failed to query length: {e}")
-                retry_count += 1
-                time.sleep(RESPONSE_DELAY_MS)
-                continue
-            
-            # Read length bytes (read 2 bytes from device)
-            try:
-                length_bytes = self._bus.read_i2c_block_data(self._addr, 0, 2)
+                # 使用read_i2c_block_data在一个I2C事务中读取2个字节
+                # 参数：地址，寄存器（0表示直接读取），长度
+                length_bytes = self._bus.read_i2c_block_data(self._addr, CMD_QUERY_LENGTH, 2)
                 if len(length_bytes) < 2:
-                    dbg("request length failed 1 - insufficient data")
+                    dbg("request length failed 1")
                     retry_count += 1
                     time.sleep(RESPONSE_DELAY_MS)
                     continue
             except Exception as e:
-                dbg(f"Failed to read length: {e}")
+                dbg(f"request length failed 1: {e}")
                 retry_count += 1
                 time.sleep(RESPONSE_DELAY_MS)
                 continue
             
-            # Parse length (big-endian)
-            len_val = (length_bytes[0] << 8) | length_bytes[1]
+            # 解析长度（大端格式），确保每个字节都是uint8_t (0-255)
+            len_val = ((length_bytes[0] & 0xFF) << 8) | (length_bytes[1] & 0xFF)
             
-            # Check length validity
+            # 检查长度有效性
             if len_val == INVALID_LENGTH:
                 dbg("request length failed 2 - invalid length")
-                # Resend request frame
+                # 重新发送请求帧
                 try:
                     if len(request_buf) > 0:
-                        self._bus.write_i2c_block_data(self._addr, request_buf[0], list(request_buf[1:]))
+                        if len(request_buf) == 1:
+                            self._bus.write_byte(self._addr, request_buf[0])
+                        else:
+                            self._bus.write_i2c_block_data(self._addr, request_buf[0], list(request_buf[1:]))
                 except Exception:
                     pass
                 retry_count += 1
                 time.sleep(RESPONSE_DELAY_MS)
                 continue
             
-            # Read data in chunks (support long packets exceeding MAX_I2C_PACKET_SIZE)
+            # 分包读取数据（支持超过MAX_I2C_PACKET_SIZE的长包）
             total_bytes_read = 0
             result = 0
             need_retry = False
             
-            # Loop to read until len bytes are read
+            # 循环读取直到读取完len字节
             while total_bytes_read < len_val and not need_retry:
-                # Calculate bytes to read this time (max MAX_I2C_PACKET_SIZE bytes)
-                bytes_to_read = min(MAX_I2C_PACKET_SIZE, len_val - total_bytes_read)
+                # 计算本次要读取的字节数（最多MAX_I2C_PACKET_SIZE字节）
+                bytes_to_read = len_val - total_bytes_read
+                if bytes_to_read > MAX_I2C_PACKET_SIZE:
+                    bytes_to_read = MAX_I2C_PACKET_SIZE
                 
-                # Request data chunk
+                # 请求数据块
                 try:
                     data_chunk = self._bus.read_i2c_block_data(self._addr, 0, bytes_to_read)
                     if len(data_chunk) == 0:
@@ -441,83 +447,99 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
                         need_retry = True
                         break
                 except Exception as e:
-                    dbg(f"Failed to read data chunk: {e}")
+                    dbg(f"request data failed: {e}")
                     need_retry = True
                     break
                 
-                # Read and process data
+                # 读取并处理数据
                 p_buf_ref = [p_buf]  # Use list to allow modification
-                for i in range(min(bytes_to_read, len(data_chunk))):
+                for i in range(bytes_to_read):
                     if total_bytes_read >= len_val:
                         break
+                    if i >= len(data_chunk):
+                        dbg("I2C data not available")
+                        need_retry = True
+                        break
+                    
                     data_byte = data_chunk[i]
                     result = process_data_state(data_byte, cmd, request_state, length,
                                                  data_length, p_buf_ref)
                     p_buf = p_buf_ref[0]  # Update reference
                     total_bytes_read += 1
                     
-                    # Check processing result
-                    if result == 1:  # Error
+                    # 检查处理结果
+                    if result == 1:  # 错误
+                        if p_buf is not None:
+                            p_buf = None
+                            p_buf_ref[0] = None
                         dbg("data processing error")
+                        # 重置状态并标记需要重试
                         request_state[0] = DATA_STATIC_HEAD
                         length[0] = 0
                         data_length[0] = 0
-                        p_buf = None
-                        p_buf_ref[0] = None
                         need_retry = True
                         break
-                    elif result == 2:  # State machine complete
-                        # If state machine completes but data not fully read, protocol mismatch
+                    elif result == 2:  # 状态机完成
+                        # 状态机完成时，应该已经读取完所有数据
+                        # 如果还没读完，说明协议不匹配，需要重试
                         if total_bytes_read < len_val:
                             dbg("state machine complete but data not fully read")
+                            if p_buf is not None:
+                                p_buf = None
+                                p_buf_ref[0] = None
                             request_state[0] = DATA_STATIC_HEAD
                             length[0] = 0
                             data_length[0] = 0
-                            p_buf = None
-                            p_buf_ref[0] = None
                             need_retry = True
+                        # 如果已读完，跳出循环，稍后进行验证
                         break
                 
-                # If there's remaining data to read and no error, add short delay
+                # 如果还有剩余数据需要读取且未出错，添加短暂延迟
                 if total_bytes_read < len_val and not need_retry and result != 2:
-                    time.sleep(0.01)  # Short delay, wait for device to prepare next packet
+                    time.sleep(0.01)  # 短暂延迟，等待设备准备下一包数据
             
-            # Check if all data was successfully read
+            # 检查是否成功读取了所有数据
             if not need_retry and total_bytes_read >= len_val:
-                # If state machine completed, perform CRC validation
+                # 如果状态机已完成，进行CRC验证
                 if result == 2:
                     validated_buf = validate_and_return_data(p_buf, length[0])
                     if validated_buf is not None:
-                        return validated_buf
-                    # CRC validation failed, cleanup and mark for retry
+                        return validated_buf  # 验证成功，返回数据
+                    # CRC验证失败，清理并标记需要重试
+                    if p_buf is not None:
+                        p_buf = None
                     request_state[0] = DATA_STATIC_HEAD
                     length[0] = 0
                     data_length[0] = 0
-                    p_buf = None
                     dbg("CRC validation failed, retrying")
                     need_retry = True
                 else:
-                    # Data read complete but state machine not finished, need retry
+                    # 数据读取完成但状态机未完成，需要重试
                     dbg("data read complete but state machine not finished")
                     need_retry = True
             elif not need_retry and total_bytes_read < len_val:
                 dbg("incomplete data read")
                 need_retry = True
             
-            # If need retry or data incomplete, resend request frame
+            # 如果需要重试或数据未完成，重新发送请求帧
             if need_retry or result == 0:
                 if result == 0:
                     dbg("request length failed 4 - incomplete data")
-                # Resend request frame
+                # 重新发送请求帧
                 try:
                     if len(request_buf) > 0:
-                        self._bus.write_i2c_block_data(self._addr, request_buf[0], list(request_buf[1:]))
+                        if len(request_buf) == 1:
+                            self._bus.write_byte(self._addr, request_buf[0])
+                        else:
+                            self._bus.write_i2c_block_data(self._addr, request_buf[0], list(request_buf[1:]))
                 except Exception:
                     pass
                 retry_count += 1
                 time.sleep(RESPONSE_DELAY_MS)
         
-        # Timeout cleanup
+        # 超时清理
+        if p_buf is not None:
+            p_buf = None
         dbg("request timeout")
         return None
 

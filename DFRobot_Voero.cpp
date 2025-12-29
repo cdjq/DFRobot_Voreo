@@ -220,6 +220,18 @@ uint16_t DFRobot_Voero::getAngle(void)
     return angle;
 }
 
+uint8_t DFRobot_Voero::setWakeUp(uint8_t* pData)
+{
+    sendCommand(VOERO_CMD_WAKE_UP, pData, strlen(pData));
+    return 1;
+}
+
+uint8_t DFRobot_Voero::setWakeUp(String data)
+{
+    uint8_t *pData = (uint8_t *)data.c_str();
+    return setWakeUp(pData);
+}
+
 uint8_t DFRobot_Voero::setSpeed(uint8_t speed)
 {
     
@@ -500,6 +512,8 @@ uint8_t DFRobot_Voero_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dat
     _pSerial->write(buf, dataLength + 6);
     return 1;
 }
+
+
 
 uint8_t *DFRobot_Voero_UART::readData(uint8_t cmd)
 {

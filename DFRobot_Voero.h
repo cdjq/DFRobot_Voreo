@@ -25,7 +25,8 @@
 #define VOERO_CMD_SEND_TEXT         (0x03) ///< Send text command
 #define VOERO_CMD_ANGLE             (0x04) ///< Angle command
 #define VOERO_CMD_DISTANCE          (0x05) ///< Distance command
-#define VOERO_CMD_SET_SPEED         (0x06) ///< Set speed command
+#define VOERO_CMD_WAKE_UP           (0x06) ///< Wake up command
+#define VOERO_CMD_SET_SPEED         (0x07) ///< Set speed command
 
 #define VOERO_REQUEST_TIMEOUT       (10000) ///< Request timeout
 
@@ -109,6 +110,9 @@ public:
     * @retval 0 Failed
     */
    uint8_t setSpeed(uint8_t speed);
+
+   uint8_t setWakeUp(uint8_t* pData);
+   uint8_t setWakeUp(String data);
 
    /**
     * @fn sendCommand

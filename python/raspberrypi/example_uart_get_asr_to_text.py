@@ -108,13 +108,12 @@ def main():
         while True:
             # Send text to the module (TTS)
             print(f"Sending text: {text_to_send}")
-            voero.sendText(text_to_send)
-            time.sleep(0.1)  # Wait 100ms
-            
+            voero.send_text(text_to_send)
+            time.sleep(8)  # Wait 8s
             # Query if there's recognized text available (ASR)
-            if voero.queryText() == RETURN_OK:
+            if voero.query_text() == RETURN_OK:
                 # Get the recognized text
-                received_text = voero.requestText()
+                received_text = voero.request_text()
                 if received_text:
                     print(f"Received text (ASR): {received_text}")
                 else:
