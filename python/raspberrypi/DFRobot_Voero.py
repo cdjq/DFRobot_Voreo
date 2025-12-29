@@ -46,6 +46,7 @@ VOERO_CMD_GET_TEXT = 0x02  # Get text command
 VOERO_CMD_SEND_TEXT = 0x03  # Send text command
 VOERO_CMD_ANGLE = 0x04  # Angle command
 VOERO_CMD_DISTANCE = 0x05  # Distance command
+VOERO_CMD_SET_WAKE_UP = 0x06  # Set wake up command
 VOERO_CMD_SET_SPEED = 0x07  # Set speed command
 
 VOERO_REQUEST_TIMEOUT = 10000  # Request timeout (ms)
@@ -250,6 +251,18 @@ class DFRobot_Voero:
             return RETURN_ERROR
         angle = (p_buf[4] << 8) | p_buf[5]
         return angle
+
+    def set_wake_up(self, data: bytes) -> int:
+        """Set the wake up of the Voero"""
+        return 1
+    
+    def set_wake_up(self, data: str) -> int:
+        """Set the wake up of the Voero"""
+        if isinstance(data, str):
+            data_bytes = data.encode('utf-8')
+        else:
+            data_bytes = data
+        return self.send_command(VOERO_CMD_SET_WAKE_UP, data_bytes)
     
     def set_speed(self, speed: int) -> int:
         """Set the speed of the Voero"""

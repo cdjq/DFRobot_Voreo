@@ -102,26 +102,26 @@ def main():
     
     # Text to send for TTS (Text to Speech)
     text_to_send = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能"
-    
+    voero.set_wake_up("kai deng")
     # Main loop
     try:
         while True:
-            # Send text to the module (TTS)
-            print(f"Sending text: {text_to_send}")
-            voero.send_text(text_to_send)
-            time.sleep(8)  # Wait 8s
-            # Query if there's recognized text available (ASR)
-            if voero.query_text() == RETURN_OK:
-                # Get the recognized text
-                received_text = voero.request_text()
-                if received_text:
-                    print(f"Received text (ASR): {received_text}")
-                else:
-                    print("No text received")
-            else:
-                print("queryText failed")
+            # # Send text to the module (TTS)
+            # print(f"Sending text: {text_to_send}")
+            # voero.send_text(text_to_send)
+            # time.sleep(8)  # Wait 8s
+            # # Query if there's recognized text available (ASR)
+            # if voero.query_text() == RETURN_OK:
+            #     # Get the recognized text
+            #     received_text = voero.request_text()
+            #     if received_text:
+            #         print(f"Received text (ASR): {received_text}")
+            #     else:
+            #         print("No text received")
+            # else:
+            #     print("queryText failed")
             
-            print("-" * 50)
+            # print("-" * 50)
             time.sleep(0.1)  # Wait 100ms before next iteration
             
     except KeyboardInterrupt:
