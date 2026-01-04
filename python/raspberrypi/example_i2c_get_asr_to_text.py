@@ -10,7 +10,7 @@
 @date 2025-12-12
 @url https://github.com/DFRobot/DFRobot_Voreo
 
-This example demonstrates how to use DFRobot_Voero with I2C interface on Raspberry Pi.
+This example demonstrates how to use DFRobot_Voreo with I2C interface on Raspberry Pi.
 It sends text to the module (TTS) and receives recognized text back (ASR).
 
 Hardware connection:
@@ -27,28 +27,28 @@ import time
 import sys
 import os
 
-# Add the parent directory to path to import DFRobot_Voero
+# Add the parent directory to path to import DFRobot_Voreo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from DFRobot_Voero import DFRobot_Voero_I2C, RETURN_OK, RETURN_ERROR
+from DFRobot_Voreo import DFRobot_Voreo_I2C, RETURN_OK, RETURN_ERROR
 
 
 def main():
     """Main function"""
-    print("DFRobot_Voero_I2C example - Get ASR to Text")
+    print("DFRobot_Voreo_I2C example - Get ASR to Text")
     print("=" * 50)
     
     # Initialize I2C interface
     # i2c_bus=1 for Raspberry Pi (corresponds to /dev/i2c-1)
     # i2c_addr=0x1f is the default address
-    voero = DFRobot_Voero_I2C(i2c_bus=1, i2c_addr=0x1f)
+    voreo = DFRobot_Voreo_I2C(i2c_bus=1, i2c_addr=0x1f)
     
     # Initialize the module
-    print("Initializing Voero module...")
-    while voero.begin() != RETURN_OK:
-        print("Voero begin failed, retrying...")
+    print("Initializing Voreo module...")
+    while voreo.begin() != RETURN_OK:
+        print("Voreo begin failed, retrying...")
         time.sleep(1)
-    print("Voero initialized successfully!")
+    print("Voreo initialized successfully!")
     print()
     
     # Text to send for TTS (Text to Speech)
@@ -59,12 +59,12 @@ def main():
         while True:
             # Send text to the module (TTS)
             print(f"Sending text: {text_to_send}")
-            voero.send_text(text_to_send)
+            voreo.send_text(text_to_send)
             time.sleep(8)  # Wait 8s
             # Query if there's recognized text available (ASR)
-            if voero.query_text() == RETURN_OK:
+            if voreo.query_text() == RETURN_OK:
                 # Get the recognized text
-                received_text = voero.request_text()
+                received_text = voreo.request_text()
                 if received_text:
                     print(f"Received text (ASR): {received_text}")
                 else:

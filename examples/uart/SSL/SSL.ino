@@ -17,16 +17,16 @@
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
-#include <DFRobot_Voero.h>
+#include <DFRobot_Voreo.h>
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
 #include <SoftwareSerial.h>
 #endif
 
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
 SoftwareSerial mySerial(5, 4);
-DFRobot_Voero_UART voero(&mySerial);
+DFRobot_Voreo_UART voreo(&mySerial);
 #else
-DFRobot_Voero_UART voero(&Serial1);
+DFRobot_Voreo_UART voreo(&Serial1);
 #endif
 
 void setup()
@@ -37,17 +37,17 @@ void setup()
     Serial1.begin(9600);
 #endif
     Serial.begin(115200);
-    Serial.println("DFRobot_Voero_UART example");
-    while(!voero.begin())
+    Serial.println("DFRobot_Voreo_UART example");
+    while(!voreo.begin())
     {
-        Serial.println("Voero begin failed");
+        Serial.println("Voreo begin failed");
         delay(1000);
     }
 }
 
 void loop()
 {
-    uint16_t angle = voero.getAngle();
+    uint16_t angle = voreo.getAngle();
     Serial.print("Angle: ");
     Serial.println(angle);
     delay(100);

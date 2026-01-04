@@ -1,6 +1,6 @@
 /**
- * @file getASRToText.ino
- * @brief Get ASR to Text example
+ * @file setWakeUp.ino
+ * @brief Set Wake Up example
  * @copyright	Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
  * @author    [TangJie](jie.tang@dfrobot.com)
@@ -10,31 +10,21 @@
  */
 
  #include <DFRobot_Voreo.h>
- char *text = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
  DFRobot_Voreo_I2C voreo;
- 
  void setup()
  {
      Serial.begin(115200);
      Serial.println("DFRobot_Voreo_I2C example");
      while(!voreo.begin())
      {
-        Serial.println("Voreo begin failed");
+         Serial.println("Voreo begin failed");
          delay(1000);
      }
+     voreo.setWakeUp("kai deng");
  }
  
  void loop()
  {
-     voreo.sendText(text);
-     delay(8000);
-     if(voreo.queryText())
-     {
-        String text = voreo.requestText();
-        Serial.println(text);
-     }else{
-        Serial.println("queryText failed");
-     }
      delay(100);
  }
  

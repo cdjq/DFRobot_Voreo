@@ -1,5 +1,5 @@
 /*!
- * @file DFRobot_Voero.h
+ * @file DFRobot_Voreo.h
  * @brief DFRobot Voreo library
  * @copyright	Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
@@ -8,27 +8,27 @@
  * @date 2025-12-12
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
-#ifndef __DFROBOT_VOERO_H__
-#define __DFROBOT_VOERO_H__
+#ifndef __DFROBOT_VOREO_H__
+#define __DFROBOT_VOREO_H__
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
 
-#define VOERO_I2C_ADDR              (0x1f) ///< I2C address
+#define VOREO_I2C_ADDR              (0x1f) ///< I2C address
 
-#define VOERO_CMD_HEAD              (0x55) ///< Command head
-#define VOERO_CMD_END               (0xFF) ///< Command end
-#define VOERO_CMD_BEGIN             (0x00) ///< Command begin
-#define VOERO_CMD_QUERY_TEXT        (0x01) ///< Query text command
-#define VOERO_CMD_GET_TEXT          (0x02) ///< Get text command
-#define VOERO_CMD_SEND_TEXT         (0x03) ///< Send text command
-#define VOERO_CMD_ANGLE             (0x04) ///< Angle command
-#define VOERO_CMD_DISTANCE          (0x05) ///< Distance command
-#define VOERO_CMD_WAKE_UP           (0x06) ///< Wake up command
-#define VOERO_CMD_SET_SPEED         (0x07) ///< Set speed command
+#define VOREO_CMD_HEAD              (0x55) ///< Command head
+#define VOREO_CMD_END               (0xFF) ///< Command end
+#define VOREO_CMD_BEGIN             (0x00) ///< Command begin
+#define VOREO_CMD_QUERY_TEXT        (0x01) ///< Query text command
+#define VOREO_CMD_GET_TEXT          (0x02) ///< Get text command
+#define VOREO_CMD_SEND_TEXT         (0x03) ///< Send text command
+#define VOREO_CMD_ANGLE             (0x04) ///< Angle command
+#define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
+#define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
+#define VOREO_CMD_SET_SPEED         (0x07) ///< Set speed command
 
-#define VOERO_REQUEST_TIMEOUT       (10000) ///< Request timeout
+#define VOREO_REQUEST_TIMEOUT       (10000) ///< Request timeout
 
 #define RETURN_OK                   (0x01) ///< Return OK
 #define RETURN_ERROR                (0x00) ///< Return ERROR
@@ -52,13 +52,13 @@
 #define DBG(...)
 #endif
 
-class DFRobot_Voero
+class DFRobot_Voreo
 {
 public:
 
     /**
      * #fn begin
-     * @brief Initialize the Voero
+     * @brief Initialize the Voreo
      * @return The result of the initialize
      * @retval 1 Success
      * @retval 0 Failed
@@ -67,7 +67,7 @@ public:
 
     /**
      * @fn queryText
-     * @brief Query the text from the Voero
+     * @brief Query the text from the Voreo
      * @return The result of the query
      * @retval 1 Success
      * @retval 0 Failed
@@ -76,15 +76,15 @@ public:
 
     /**
      * @fn requestText
-     * @brief Request the text from the Voero
+     * @brief Request the text from the Voreo
      * @return The result of the request
-     * @retval String The text from the Voero
+     * @retval String The text from the Voreo
      */
     String requestText(void);
 
    /**
     * @fn sendText
-    * @brief Send the text to the Voero
+    * @brief Send the text to the Voreo
     * @param pText The text to send
     * @return The result of the send
     * @retval 1 Success
@@ -103,7 +103,7 @@ public:
 
    /**
     * @fn setSpeed
-    * @brief Set the speed of the Voero
+    * @brief Set the speed of the Voreo
     * @param speed The speed to set
     * @return The result of the set speed
     * @retval 1 Success
@@ -111,12 +111,20 @@ public:
     */
    uint8_t setSpeed(uint8_t speed);
 
+   /**
+    * @fn setWakeUp
+    * @brief Set the wake up of the Voreo
+    * @param pData The data to set
+    * @return The result of the set wake up
+    * @retval 1 Success
+    * @retval 0 Failed
+    */
    uint8_t setWakeUp(uint8_t* pData);
    uint8_t setWakeUp(String data);
 
    /**
     * @fn sendCommand
-    * @brief Send the command to the Voero
+    * @brief Send the command to the Voreo
     * @param cmd The command to send
     * @param pData The data to send
     * @param dataLength The length of the data
@@ -131,11 +139,11 @@ public:
     
 };
 
-class DFRobot_Voero_I2C : public DFRobot_Voero
+class DFRobot_Voreo_I2C : public DFRobot_Voreo
 {
 public:
-    DFRobot_Voero_I2C(TwoWire *pWire = &Wire);
-    ~DFRobot_Voero_I2C();
+    DFRobot_Voreo_I2C(TwoWire *pWire = &Wire);
+    ~DFRobot_Voreo_I2C();
 
     uint8_t begin(void);
     virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength);
@@ -145,12 +153,12 @@ private:
     TwoWire *_pWire = NULL;
 };
 
-class DFRobot_Voero_UART : public DFRobot_Voero
+class DFRobot_Voreo_UART : public DFRobot_Voreo
 {
 
 public:
-    DFRobot_Voero_UART(Stream *pSerial);
-    ~DFRobot_Voero_UART();
+    DFRobot_Voreo_UART(Stream *pSerial);
+    ~DFRobot_Voreo_UART();
 
     uint8_t begin(void);
     virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength);

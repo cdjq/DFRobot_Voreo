@@ -1,5 +1,5 @@
 /**
- * @file DFRobot_Voero.cpp
+ * @file DFRobot_Voreo.cpp
  * @brief  DFRobot Voreo library
  * @copyright	Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
@@ -9,7 +9,7 @@
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
-#include "DFRobot_Voero.h"
+#include "DFRobot_Voreo.h"
 
 static uint16_t calculateCRC16(const uint8_t *data, size_t len)
 {
@@ -30,7 +30,7 @@ static uint16_t calculateCRC16(const uint8_t *data, size_t len)
 // 构建请求帧
 static void buildRequestFrame(uint8_t *buf, uint8_t cmd)
 {
-    buf[0] = VOERO_CMD_HEAD;
+    buf[0] = VOREO_CMD_HEAD;
     buf[1] = 0;
     buf[2] = 0;
     buf[3] = cmd;
@@ -42,7 +42,7 @@ static void buildRequestFrame(uint8_t *buf, uint8_t cmd)
 // 构建命令帧
 static void buildCommandFrame(uint8_t *buf, uint8_t cmd, uint8_t *pData, uint8_t dataLength)
 {
-    buf[0] = VOERO_CMD_HEAD;
+    buf[0] = VOREO_CMD_HEAD;
     buf[1] = (dataLength >> 8) & 0xff;
     buf[2] = dataLength & 0xff;
     buf[3] = cmd;
@@ -73,7 +73,7 @@ static uint8_t processDataState(uint8_t data, uint8_t cmd, uint8_t *requestStati
 {
     switch (*requestStatic) {
     case DATA_STATIC_HEAD:
-        if (data == VOERO_CMD_HEAD) {
+        if (data == VOREO_CMD_HEAD) {
             *requestStatic = DATA_STATIC_LEN_H;
             *dataLength = 0;
         }
@@ -106,7 +106,7 @@ static uint8_t processDataState(uint8_t data, uint8_t cmd, uint8_t *requestStati
             DBG("malloc failed");
             return 1; // 错误
         }
-        (*pBuf)[0] = VOERO_CMD_HEAD;
+        (*pBuf)[0] = VOREO_CMD_HEAD;  
         (*pBuf)[1] = *length >> 8;
         (*pBuf)[2] = *length & 0xff;
         (*pBuf)[3] = cmd;
@@ -137,9 +137,9 @@ static uint8_t processDataState(uint8_t data, uint8_t cmd, uint8_t *requestStati
     }
 } 
 
-uint8_t DFRobot_Voero::begin(void)
+uint8_t DFRobot_Voreo::begin(void)
 {
-    uint8_t *pBuf = readData(VOERO_CMD_BEGIN);
+    uint8_t *pBuf = readData(VOREO_CMD_BEGIN);
     if (pBuf == NULL) {
         return RETURN_ERROR;
     }
@@ -148,9 +148,9 @@ uint8_t DFRobot_Voero::begin(void)
     return result;
 }
 
-uint8_t DFRobot_Voero::queryText(void)
+uint8_t DFRobot_Voreo::queryText(void)
 {
-    uint8_t *pBuf = readData(VOERO_CMD_QUERY_TEXT);
+    uint8_t *pBuf = readData(VOREO_CMD_QUERY_TEXT);
     if (pBuf == NULL) {
         return RETURN_ERROR;
     }
@@ -159,9 +159,9 @@ uint8_t DFRobot_Voero::queryText(void)
     return result;
 }
 
-String DFRobot_Voero::requestText(void)
+String DFRobot_Voreo::requestText(void)
 {
-    uint8_t *pBuf = readData(VOERO_CMD_GET_TEXT);
+    uint8_t *pBuf = readData(VOREO_CMD_GET_TEXT);
     if(pBuf == NULL)
     {
         DBG("readData failed");
@@ -196,22 +196,22 @@ String DFRobot_Voero::requestText(void)
     return text;
 }
 
-uint8_t DFRobot_Voero::sendText(uint8_t *pText)
+uint8_t DFRobot_Voreo::sendText(uint8_t *pText)
 {
     uint16_t length = strlen(pText);
-    sendCommand(VOERO_CMD_SEND_TEXT, pText, length);
+    sendCommand(VOREO_CMD_SEND_TEXT, pText, length);
     return 1;
 }
 
-uint8_t DFRobot_Voero::sendText(String text)
+uint8_t DFRobot_Voreo::sendText(String text)
 {
     uint8_t *pText = (uint8_t *)text.c_str();
     return sendText(pText);
 }
 
-uint16_t DFRobot_Voero::getAngle(void)
+uint16_t DFRobot_Voreo::getAngle(void)
 {
-    uint8_t *pBuf = readData(VOERO_CMD_ANGLE);
+    uint8_t *pBuf = readData(VOREO_CMD_ANGLE);
     if (pBuf == NULL) {
         return RETURN_ERROR;
     }
@@ -220,42 +220,42 @@ uint16_t DFRobot_Voero::getAngle(void)
     return angle;
 }
 
-uint8_t DFRobot_Voero::setWakeUp(uint8_t* pData)
+uint8_t DFRobot_Voreo::setWakeUp(uint8_t* pData)
 {
-    sendCommand(VOERO_CMD_WAKE_UP, pData, strlen(pData));
+    sendCommand(VOREO_CMD_WAKE_UP, pData, strlen(pData));
     return 1;
 }
 
-uint8_t DFRobot_Voero::setWakeUp(String data)
+uint8_t DFRobot_Voreo::setWakeUp(String data)
 {
     uint8_t *pData = (uint8_t *)data.c_str();
     return setWakeUp(pData);
 }
 
-uint8_t DFRobot_Voero::setSpeed(uint8_t speed)
+uint8_t DFRobot_Voreo::setSpeed(uint8_t speed)
 {
     
     return 1;
 }
 
 
-DFRobot_Voero_I2C::DFRobot_Voero_I2C(TwoWire *pWire)
+DFRobot_Voreo_I2C::DFRobot_Voreo_I2C(TwoWire *pWire)
 {
     _pWire = pWire;
 }
 
-DFRobot_Voero_I2C::~DFRobot_Voero_I2C()
+DFRobot_Voreo_I2C::~DFRobot_Voreo_I2C()
 {
     _pWire = NULL;
 }
 
-uint8_t DFRobot_Voero_I2C::begin(void)
+uint8_t DFRobot_Voreo_I2C::begin(void)
 {
     _pWire->begin();
-    return DFRobot_Voero::begin();
+    return DFRobot_Voreo::begin();
 }
 
-uint8_t DFRobot_Voero_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
+uint8_t DFRobot_Voreo_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
 {
     // 常量定义
     const uint16_t MAX_I2C_PACKET_SIZE = 28;      // I2C最大数据包长度
@@ -278,7 +278,7 @@ uint8_t DFRobot_Voero_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t data
                                 : (totalLength - offset);
             
             // 发送数据块
-            _pWire->beginTransmission(VOERO_I2C_ADDR);
+            _pWire->beginTransmission(VOREO_I2C_ADDR);
             uint8_t bytesWritten = _pWire->write(buf + offset, chunkSize);
             uint8_t error = _pWire->endTransmission();
             
@@ -299,7 +299,7 @@ uint8_t DFRobot_Voero_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t data
         return 1;  // 分包发送成功
     } else {
         // 数据长度在限制内，直接发送
-        _pWire->beginTransmission(VOERO_I2C_ADDR);
+        _pWire->beginTransmission(VOREO_I2C_ADDR);
         uint8_t bytesWritten = _pWire->write(buf, totalLength);
         uint8_t error = _pWire->endTransmission();
         
@@ -313,7 +313,7 @@ uint8_t DFRobot_Voero_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t data
     }
 }
 
-uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
+uint8_t *DFRobot_Voreo_I2C::readData(uint8_t cmd)
 {
     // 常量定义
     const uint8_t CMD_QUERY_LENGTH = 0x21;        // 查询数据长度命令
@@ -325,7 +325,7 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
     // 构建并发送初始请求帧
     uint8_t requestBuf[6];
     buildRequestFrame(requestBuf, cmd);
-    _pWire->beginTransmission(VOERO_I2C_ADDR);
+    _pWire->beginTransmission(VOREO_I2C_ADDR);
     _pWire->write(requestBuf, 6);
     _pWire->endTransmission();
     delay(RESPONSE_DELAY_MS);
@@ -340,12 +340,12 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
     // 主循环：尝试读取数据
     while (retryCount < MAX_RETRY_COUNT) {
         // 查询数据长度
-        _pWire->beginTransmission(VOERO_I2C_ADDR);
+        _pWire->beginTransmission(VOREO_I2C_ADDR);
         _pWire->write(CMD_QUERY_LENGTH);
         _pWire->endTransmission();
         
         // 读取长度字节
-        if (_pWire->requestFrom(VOERO_I2C_ADDR, 2) == 0) {
+        if (_pWire->requestFrom(VOREO_I2C_ADDR, 2) == 0) {
             DBG("request length failed 1");
             retryCount++;
             delay(RESPONSE_DELAY_MS);
@@ -361,7 +361,7 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
         if (len == INVALID_LENGTH) {
             DBG("request length failed 2 - invalid length");
             // 重新发送请求帧
-            _pWire->beginTransmission(VOERO_I2C_ADDR);
+            _pWire->beginTransmission(VOREO_I2C_ADDR);
             _pWire->write(requestBuf, 6);
             _pWire->endTransmission();
             retryCount++;
@@ -383,7 +383,7 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
             }
             
             // 请求数据块
-            if (_pWire->requestFrom(VOERO_I2C_ADDR, bytesToRead) == 0) {
+            if (_pWire->requestFrom(VOREO_I2C_ADDR, bytesToRead) == 0) {
                 DBG("request data failed");
                 needRetry = true;
                 break;
@@ -473,7 +473,7 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
                 DBG("request length failed 4 - incomplete data");
             }
             // 重新发送请求帧
-            _pWire->beginTransmission(VOERO_I2C_ADDR);
+            _pWire->beginTransmission(VOREO_I2C_ADDR);
             _pWire->write(requestBuf, 6);
             _pWire->endTransmission();
             retryCount++;
@@ -490,22 +490,22 @@ uint8_t *DFRobot_Voero_I2C::readData(uint8_t cmd)
     return NULL;
 }
 
-DFRobot_Voero_UART::DFRobot_Voero_UART(Stream *pSerial)
+DFRobot_Voreo_UART::DFRobot_Voreo_UART(Stream *pSerial)
 {
     _pSerial = pSerial;
 }
 
-DFRobot_Voero_UART::~DFRobot_Voero_UART()
+DFRobot_Voreo_UART::~DFRobot_Voreo_UART()
 {
     _pSerial = NULL;
 }
 
-uint8_t DFRobot_Voero_UART::begin(void)
+uint8_t DFRobot_Voreo_UART::begin(void)
 {
-    return DFRobot_Voero::begin();
+    return DFRobot_Voreo::begin();
 }
 
-uint8_t DFRobot_Voero_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
+uint8_t DFRobot_Voreo_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
 {
     uint8_t buf[dataLength + 6];
     buildCommandFrame(buf, cmd, pData, dataLength);
@@ -515,7 +515,7 @@ uint8_t DFRobot_Voero_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dat
 
 
 
-uint8_t *DFRobot_Voero_UART::readData(uint8_t cmd)
+uint8_t *DFRobot_Voreo_UART::readData(uint8_t cmd)
 {
     uint8_t requestBuf[6];
     buildRequestFrame(requestBuf, cmd);
@@ -527,7 +527,7 @@ uint8_t *DFRobot_Voero_UART::readData(uint8_t cmd)
     uint16_t dataLength = 0;
 
     uint32_t start = millis();
-    while (millis() - start < VOERO_REQUEST_TIMEOUT) {
+    while (millis() - start < VOREO_REQUEST_TIMEOUT) {
         if (!_pSerial->available()) {
             continue;
         }

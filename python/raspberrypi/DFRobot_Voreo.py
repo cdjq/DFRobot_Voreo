@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@file DFRobot_Voero.py
+@file DFRobot_Voreo.py
 @brief DFRobot Voreo library for Python (Raspberry Pi compatible)
 @copyright Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
 @license The MIT License (MIT)
@@ -12,19 +12,19 @@
 
 Usage examples for Raspberry Pi:
     # I2C example
-    from DFRobot_Voero import DFRobot_Voero_I2C
-    voero = DFRobot_Voero_I2C(i2c_bus=1, i2c_addr=0x1f)  # i2c_bus=1 for /dev/i2c-1
-    if voero.begin() == RETURN_OK:
-        text = voero.request_text()
+    from DFRobot_Voreo import DFRobot_Voreo_I2C
+    voreo = DFRobot_Voreo_I2C(i2c_bus=1, i2c_addr=0x1f)  # i2c_bus=1 for /dev/i2c-1
+    if voreo.begin() == RETURN_OK:
+        text = voreo.request_text()
         print(f"Received text: {text}")
     
     # UART example
-    from DFRobot_Voero import DFRobot_Voero_UART
-    voero = DFRobot_Voero_UART('/dev/ttyUSB0', baudrate=9600)  # or '/dev/ttyAMA0'
-    if voero.begin() == RETURN_OK:
-        text = voero.request_text()
+    from DFRobot_Voreo import DFRobot_Voreo_UART
+    voreo = DFRobot_Voreo_UART('/dev/ttyUSB0', baudrate=9600)  # or '/dev/ttyAMA0'
+    if voreo.begin() == RETURN_OK:
+        text = voreo.request_text()
         print(f"Received text: {text}")
-        voero.close()  # Don't forget to close when done
+        voreo.close()  # Don't forget to close when done
 
 Dependencies:
     For I2C: sudo apt-get install python3-smbus (or pip install smbus2)
@@ -36,20 +36,20 @@ import struct
 from typing import Optional, Union
 
 # Constants
-VOERO_I2C_ADDR = 0x1f  # I2C address
+VOREO_I2C_ADDR = 0x1f  # I2C address
 
-VOERO_CMD_HEAD = 0x55  # Command head
-VOERO_CMD_END = 0xFF  # Command end
-VOERO_CMD_BEGIN = 0x00  # Command begin
-VOERO_CMD_QUERY_TEXT = 0x01  # Query text command
-VOERO_CMD_GET_TEXT = 0x02  # Get text command
-VOERO_CMD_SEND_TEXT = 0x03  # Send text command
-VOERO_CMD_ANGLE = 0x04  # Angle command
-VOERO_CMD_DISTANCE = 0x05  # Distance command
-VOERO_CMD_SET_WAKE_UP = 0x06  # Set wake up command
-VOERO_CMD_SET_SPEED = 0x07  # Set speed command
+VOREO_CMD_HEAD = 0x55  # Command head
+VOREO_CMD_END = 0xFF  # Command end
+VOREO_CMD_BEGIN = 0x00  # Command begin
+VOREO_CMD_QUERY_TEXT = 0x01  # Query text command
+VOREO_CMD_GET_TEXT = 0x02  # Get text command
+VOREO_CMD_SEND_TEXT = 0x03  # Send text command
+VOREO_CMD_ANGLE = 0x04  # Angle command
+VOREO_CMD_DISTANCE = 0x05  # Distance command
+VOREO_CMD_SET_WAKE_UP = 0x06  # Set wake up command
+VOREO_CMD_SET_SPEED = 0x07  # Set speed command
 
-VOERO_REQUEST_TIMEOUT = 10000  # Request timeout (ms)
+VOREO_REQUEST_TIMEOUT = 10000  # Request timeout (ms)
 
 RETURN_OK = 0x01  # Return OK
 RETURN_ERROR = 0x00  # Return ERROR
@@ -92,7 +92,7 @@ def calculate_crc16(data: bytes) -> int:
 def build_request_frame(cmd: int) -> bytes:
     """Build request frame"""
     buf = bytearray(6)
-    buf[0] = VOERO_CMD_HEAD
+    buf[0] = VOREO_CMD_HEAD 
     buf[1] = 0
     buf[2] = 0
     buf[3] = cmd
@@ -106,7 +106,7 @@ def build_command_frame(cmd: int, data: bytes) -> bytes:
     """Build command frame"""
     data_length = len(data)
     buf = bytearray(data_length + 6)
-    buf[0] = VOERO_CMD_HEAD
+    buf[0] = VOREO_CMD_HEAD 
     buf[1] = (data_length >> 8) & 0xFF
     buf[2] = data_length & 0xFF
     buf[3] = cmd
@@ -138,7 +138,7 @@ def process_data_state(data: int, cmd: int, request_state: list, length: list,
     state = request_state[0]
     
     if state == DATA_STATIC_HEAD:
-        if data == VOERO_CMD_HEAD:
+        if data == VOREO_CMD_HEAD:
             request_state[0] = DATA_STATIC_LEN_H
             data_length[0] = 0
         return 0
@@ -163,7 +163,7 @@ def process_data_state(data: int, cmd: int, request_state: list, length: list,
         
         # Allocate buffer
         p_buf_list[0] = bytearray(length[0] + 6)
-        p_buf_list[0][0] = VOERO_CMD_HEAD
+        p_buf_list[0][0] = VOREO_CMD_HEAD
         p_buf_list[0][1] = (length[0] >> 8) & 0xFF
         p_buf_list[0][2] = length[0] & 0xFF
         p_buf_list[0][3] = cmd
@@ -196,28 +196,28 @@ def process_data_state(data: int, cmd: int, request_state: list, length: list,
     return 0
 
 
-class DFRobot_Voero:
-    """Base class for DFRobot Voero"""
+class DFRobot_Voreo:
+    """Base class for DFRobot Voreo"""
     
     def begin(self) -> int:
-        """Initialize the Voero"""
-        p_buf = self.read_data(VOERO_CMD_BEGIN)
+        """Initialize the Voreo"""
+        p_buf = self.read_data(VOREO_CMD_BEGIN)
         if p_buf is None:
             return RETURN_ERROR
         result = RETURN_OK if p_buf[4] != 0 else RETURN_ERROR
         return result
     
     def query_text(self) -> int:
-        """Query the text from the Voero"""
-        p_buf = self.read_data(VOERO_CMD_QUERY_TEXT)
+        """Query the text from the Voreo"""
+        p_buf = self.read_data(VOREO_CMD_QUERY_TEXT)
         if p_buf is None:
             return RETURN_ERROR
         result = RETURN_OK if p_buf[4] != 0 else RETURN_ERROR
         return result
     
     def request_text(self) -> str:
-        """Request the text from the Voero"""
-        p_buf = self.read_data(VOERO_CMD_GET_TEXT)
+        """Request the text from the Voreo"""
+        p_buf = self.read_data(VOREO_CMD_GET_TEXT)
         if p_buf is None:
             dbg("readData failed")
             return ""
@@ -236,51 +236,51 @@ class DFRobot_Voero:
         return text
     
     def send_text(self, text: Union[str, bytes]) -> int:
-        """Send the text to the Voero"""
+        """Send the text to the Voreo"""
         if isinstance(text, str):
             text_bytes = text.encode('utf-8')
         else:
             text_bytes = text
-        self.send_command(VOERO_CMD_SEND_TEXT, text_bytes)
+        self.send_command(VOREO_CMD_SEND_TEXT, text_bytes)
         return 1
     
     def get_angle(self) -> int:
         """Get the angle of the sound source"""
-        p_buf = self.read_data(VOERO_CMD_ANGLE)
+        p_buf = self.read_data(VOREO_CMD_ANGLE)
         if p_buf is None:
             return RETURN_ERROR
         angle = (p_buf[4] << 8) | p_buf[5]
         return angle
 
     def set_wake_up(self, data: bytes) -> int:
-        """Set the wake up of the Voero"""
+        """Set the wake up of the Voreo"""
         return 1
     
     def set_wake_up(self, data: str) -> int:
-        """Set the wake up of the Voero"""
+        """Set the wake up of the Voreo"""
         if isinstance(data, str):
             data_bytes = data.encode('utf-8')
         else:
             data_bytes = data
-        return self.send_command(VOERO_CMD_SET_WAKE_UP, data_bytes)
+        return self.send_command(VOREO_CMD_SET_WAKE_UP, data_bytes)
     
     def set_speed(self, speed: int) -> int:
-        """Set the speed of the Voero"""
+        """Set the speed of the Voreo"""
         return 1
     
     def send_command(self, cmd: int, data: bytes) -> int:
-        """Send command to the Voero (to be implemented by subclasses)"""
+        """Send command to the Voreo (to be implemented by subclasses)"""
         raise NotImplementedError("Subclass must implement send_command")
     
     def read_data(self, cmd: int) -> Optional[bytearray]:
-        """Read data from the Voero (to be implemented by subclasses)"""
+        """Read data from the Voreo (to be implemented by subclasses)"""
         raise NotImplementedError("Subclass must implement read_data")
 
 
-class DFRobot_Voero_I2C(DFRobot_Voero):
-    """I2C implementation of DFRobot Voero for Raspberry Pi"""
+class DFRobot_Voreo_I2C(DFRobot_Voreo):
+    """I2C implementation of DFRobot Voreo for Raspberry Pi"""
     
-    def __init__(self, i2c_bus=1, i2c_addr=VOERO_I2C_ADDR):
+    def __init__(self, i2c_bus=1, i2c_addr=VOREO_I2C_ADDR):
         """
         Initialize I2C interface
         @param i2c_bus: I2C bus number (default: 1 for Raspberry Pi)
@@ -313,11 +313,11 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
             raise RuntimeError(f"Failed to initialize I2C bus {i2c_bus}: {e}")
     
     def begin(self) -> int:
-        """Initialize the Voero"""
+        """Initialize the Voreo"""
         return super().begin()
     
     def send_command(self, cmd: int, data: bytes) -> int:
-        """Send command to the Voero via I2C"""
+        """Send command to the Voreo via I2C"""
         MAX_I2C_PACKET_SIZE = 28  # I2C最大数据包长度
         PACKET_DELAY_MS = 0.01  # 分包发送间隔(s)
         
@@ -367,7 +367,7 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
                 return 0
     
     def read_data(self, cmd: int) -> Optional[bytearray]:
-        """Read data from the Voero via I2C"""
+        """Read data from the Voreo via I2C"""
         # 常量定义
         CMD_QUERY_LENGTH = 0x21        # 查询数据长度命令
         MAX_RETRY_COUNT = 10           # 最大重试次数
@@ -557,8 +557,8 @@ class DFRobot_Voero_I2C(DFRobot_Voero):
         return None
 
 
-class DFRobot_Voero_UART(DFRobot_Voero):
-    """UART implementation of DFRobot Voero for Raspberry Pi"""
+class DFRobot_Voreo_UART(DFRobot_Voreo):
+    """UART implementation of DFRobot Voreo for Raspberry Pi"""
     
     def __init__(self, serial_port: str, baudrate: int = 9600, timeout: float = 1.0):
         """
@@ -595,11 +595,11 @@ class DFRobot_Voero_UART(DFRobot_Voero):
             raise RuntimeError(f"Failed to initialize serial port {serial_port}: {e}")
     
     def begin(self) -> int:
-        """Initialize the Voero"""
+        """Initialize the Voreo"""
         return super().begin()
     
     def send_command(self, cmd: int, data: bytes) -> int:
-        """Send command to the Voero via UART"""
+        """Send command to the Voreo via UART"""    
         frame = build_command_frame(cmd, data)
         try:
             self._serial.write(frame)
@@ -609,7 +609,7 @@ class DFRobot_Voero_UART(DFRobot_Voero):
             return 0
     
     def read_data(self, cmd: int) -> Optional[bytearray]:
-        """Read data from the Voero via UART"""
+        """Read data from the Voreo via UART"""
         request_buf = build_request_frame(cmd)
         try:
             self._serial.write(request_buf)
@@ -625,7 +625,7 @@ class DFRobot_Voero_UART(DFRobot_Voero):
         p_buf_ref = [p_buf]
         
         start_time = time.time()
-        timeout_seconds = VOERO_REQUEST_TIMEOUT / 1000.0  # Convert ms to seconds
+        timeout_seconds = VOREO_REQUEST_TIMEOUT / 1000.0  # Convert ms to seconds
         
         while (time.time() - start_time) < timeout_seconds:
             if self._serial.in_waiting == 0:

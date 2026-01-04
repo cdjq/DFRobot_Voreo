@@ -17,16 +17,16 @@
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
- #include <DFRobot_Voero.h>
+ #include <DFRobot_Voreo.h>
  #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
  #include <SoftwareSerial.h>
  #endif
  
  #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
  SoftwareSerial mySerial(5, 4);
- DFRobot_Voero_UART voero(&mySerial);
+ DFRobot_Voreo_UART voreo(&mySerial);
  #else
- DFRobot_Voero_UART voero(&Serial1);
+ DFRobot_Voreo_UART voreo(&Serial1);
  #endif
  char *text = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
  void setup()
@@ -37,10 +37,10 @@
      Serial1.begin(9600);
  #endif
      Serial.begin(115200);
-     Serial.println("DFRobot_Voero_UART example");
-     while(!voero.begin())
+     Serial.println("DFRobot_Voreo_UART example");
+     while(!voreo.begin())
      {
-         Serial.println("Voero begin failed");
+         Serial.println("Voreo begin failed");
          delay(1000);
      }
     delay(1000);
@@ -48,11 +48,11 @@
  
  void loop()
  {
-     voero.sendText(text);
+     voreo.sendText(text);
      delay(8000);
-     if(voero.queryText())
+     if(voreo.queryText())
      {
-        String text = voero.requestText();
+        String text = voreo.requestText();
         Serial.println(text);
      }else{
         Serial.println("queryText failed");

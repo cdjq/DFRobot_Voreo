@@ -10,7 +10,7 @@
 @date 2025-12-12
 @url https://github.com/DFRobot/DFRobot_Voreo
 
-This example demonstrates how to use DFRobot_Voero with UART interface on Raspberry Pi.
+This example demonstrates how to use DFRobot_Voreo with UART interface on Raspberry Pi.
 It sends text to the module (TTS) and receives recognized text back (ASR).
 
 Hardware connection:
@@ -38,15 +38,15 @@ import time
 import sys
 import os
 
-# Add the parent directory to path to import DFRobot_Voero
+# Add the parent directory to path to import DFRobot_Voreo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from DFRobot_Voero import DFRobot_Voero_UART, RETURN_OK, RETURN_ERROR
+from DFRobot_Voreo import DFRobot_Voreo_UART, RETURN_OK, RETURN_ERROR
 
 
 def main():
     """Main function"""
-    print("DFRobot_Voero_UART example - Get ASR to Text")
+    print("DFRobot_Voreo_UART example - Get ASR to Text")
     print("=" * 50)
     
     # Get serial port from command line argument or use default
@@ -78,7 +78,7 @@ def main():
     # Initialize UART interface
     # baudrate=9600 is the default
     try:
-        voero = DFRobot_Voero_UART(serial_port, baudrate=9600)
+        voreo = DFRobot_Voreo_UART(serial_port, baudrate=9600)
     except Exception as e:
         print(f"Failed to open serial port {serial_port}: {e}")
         print("Make sure:")
@@ -88,32 +88,32 @@ def main():
         sys.exit(1)
     
     # Initialize the module
-    print("Initializing Voero module...")
+    print("Initializing Voreo module...")
     try:
-        while voero.begin() != RETURN_OK:
-            print("Voero begin failed, retrying...")
+        while voreo.begin() != RETURN_OK:
+            print("Voreo begin failed, retrying...")
             time.sleep(1)
-        print("Voero initialized successfully!")
+        print("Voreo initialized successfully!")
         print()
     except KeyboardInterrupt:
         print("\n\nExiting...")
-        voero.close()
+        voreo.close()
         sys.exit(0)
     
     # Text to send for TTS (Text to Speech)
     text_to_send = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能"
-    voero.set_wake_up("kai deng")
+    voreo.set_wake_up("kai deng")
     # Main loop
     try:
         while True:
             # # Send text to the module (TTS)
             # print(f"Sending text: {text_to_send}")
-            # voero.send_text(text_to_send)
+            # voreo.send_text(text_to_send)
             # time.sleep(8)  # Wait 8s
             # # Query if there's recognized text available (ASR)
-            # if voero.query_text() == RETURN_OK:
+            # if voreo.query_text() == RETURN_OK:
             #     # Get the recognized text
-            #     received_text = voero.request_text()
+            #     received_text = voreo.request_text()
             #     if received_text:
             #         print(f"Received text (ASR): {received_text}")
             #     else:
@@ -130,7 +130,7 @@ def main():
         print(f"Error: {e}")
     finally:
         # Always close the serial port when done
-        voero.close()
+        voreo.close()
         print("Serial port closed.")
 
 
