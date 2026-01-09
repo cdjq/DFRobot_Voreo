@@ -87,6 +87,16 @@ Before using this library, please first download the library file, paste it into
    uint8_t setSpeed(uint8_t speed);
 
    /**
+    * @fn getASRState
+    * @brief Get the ASR state of the Voreo
+    * @return The result of the get ASR state
+    * @retval 0 ASR is not working
+    * @retval 1 ASR is working
+    * @retval 2 ASR is working end
+    */
+   uint8_t getASRState(void);
+
+   /**
     * @fn setWakeUp
     * @brief Set the wake-up word of the Voreo module 
     * @param pData The data to set

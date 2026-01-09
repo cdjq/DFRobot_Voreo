@@ -87,6 +87,16 @@
    uint8_t setSpeed(uint8_t speed);
 
    /**
+    * @fn getASRState
+    * @brief 获取 Voreo ASR 状态
+    * @return 返回获取的ASR状态
+    * @retval 0 ASR 未识别
+    * @retval 1 ASR 开始识别
+    * @retval 2 ASR 识别完成
+    */
+   uint8_t getASRState(void);
+
+   /**
     * @fn setWakeUp
     * @brief 设置 Voreo 模块的唤醒词
     * @param pData 要设置的数据
