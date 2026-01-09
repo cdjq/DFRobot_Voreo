@@ -48,6 +48,7 @@ VOREO_CMD_ANGLE = 0x04  # Angle command
 VOREO_CMD_DISTANCE = 0x05  # Distance command
 VOREO_CMD_SET_WAKE_UP = 0x06  # Set wake up command
 VOREO_CMD_SET_SPEED = 0x07  # Set speed command
+VOREO_CMD_GET_ASR_STATE = 0x08  # Get ASR state command
 
 VOREO_REQUEST_TIMEOUT = 10000  # Request timeout (ms)
 
@@ -267,6 +268,14 @@ class DFRobot_Voreo:
     def set_speed(self, speed: int) -> int:
         """Set the speed of the Voreo"""
         return 1
+
+    def get_asr_state(self) -> int:
+        """Get the ASR state of the Voreo"""
+        p_buf = self.read_data(VOREO_CMD_GET_ASR_STATE)
+        if p_buf is None:
+            return RETURN_ERROR
+        state = p_buf[4]
+        return state
     
     def send_command(self, cmd: int, data: bytes) -> int:
         """Send command to the Voreo (to be implemented by subclasses)"""

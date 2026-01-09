@@ -238,6 +238,17 @@ uint8_t DFRobot_Voreo::setSpeed(uint8_t speed)
     return 1;
 }
 
+uint8_t DFRobot_Voreo::getASRState(void)
+{
+    uint8_t *pBuf = readData(VOREO_CMD_GET_ASR_STATE);
+    if (pBuf == NULL) {
+        return RETURN_ERROR;
+    }
+    uint8_t state = pBuf[4];
+    free(pBuf);
+    return state;
+}
+
 
 DFRobot_Voreo_I2C::DFRobot_Voreo_I2C(TwoWire *pWire)
 {

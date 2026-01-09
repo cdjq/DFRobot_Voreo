@@ -20,7 +20,7 @@
          Serial.println("Voreo begin failed");
          delay(1000);
      }
-     voreo.setWakeUp("kai deng");
+     voreo.setWakeUp("kai men");
  }
  
  void loop()

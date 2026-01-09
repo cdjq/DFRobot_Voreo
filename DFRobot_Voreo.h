@@ -27,6 +27,7 @@
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
 #define VOREO_CMD_SET_SPEED         (0x07) ///< Set speed command
+#define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Get ASR state command
 
 #define VOREO_REQUEST_TIMEOUT       (10000) ///< Request timeout
 
@@ -121,6 +122,16 @@ public:
     */
    uint8_t setWakeUp(uint8_t* pData);
    uint8_t setWakeUp(String data);
+   
+   /**
+    * @fn getASRState
+    * @brief Get the ASR state of the Voreo
+    * @return The result of the get ASR state
+    * @retval 0 ASR is not working
+    * @retval 1 ASR is working
+    * @retval 2 ASR is working end
+    */
+   uint8_t getASRState(void);
 
    /**
     * @fn sendCommand
