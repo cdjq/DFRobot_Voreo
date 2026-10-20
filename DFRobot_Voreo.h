@@ -26,8 +26,12 @@
 #define VOREO_CMD_ANGLE             (0x04) ///< Angle command
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
-#define VOREO_CMD_SET_SPEED         (0x07) ///< Set speed command
+#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (0x00~0x0F)
 #define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Get ASR state command
+#define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0x00~0x0F)
+
+#define VOREO_TTS_LEVEL_MIN         (0x00) ///< TTS volume/speed minimum
+#define VOREO_TTS_LEVEL_MAX         (0x0F) ///< TTS volume/speed maximum
 
 #define VOREO_REQUEST_TIMEOUT       (10000) ///< Request timeout
 
@@ -104,13 +108,23 @@ public:
 
    /**
     * @fn setSpeed
-    * @brief Set the speed of the Voreo
-    * @param speed The speed to set
+    * @brief Set the TTS speech speed of the Voreo
+    * @param speed Speech speed, range 0x00~0x0F (values above max are clamped)
     * @return The result of the set speed
     * @retval 1 Success
     * @retval 0 Failed
     */
    uint8_t setSpeed(uint8_t speed);
+
+   /**
+    * @fn setVolume
+    * @brief Set the TTS volume of the Voreo
+    * @param volume Volume level, range 0x00~0x0F (values above max are clamped)
+    * @return The result of the set volume
+    * @retval 1 Success
+    * @retval 0 Failed
+    */
+   uint8_t setVolume(uint8_t volume);
 
    /**
     * @fn setWakeUp

@@ -15,6 +15,7 @@
 
   * [概述](#概述)
   * [库安装](#库安装)
+  * [通信模式](#通信模式)
   * [方法](#方法)
   * [兼容性](#兼容性)
   * [历史](#历史)
@@ -23,10 +24,36 @@
 ## 概述
 
   * 这是一个语音转文字，文字转语音的模块。
+  * 支持 UART 与 I2C，示例通过宏 `VOREO_COMM_MODE` 切换。
+  * 支持调节 TTS 音量与语速（范围 `0x00`~`0x0F`）。
 
 ## 库安装
 
 使用此库前，请首先下载库文件，将其粘贴到\Arduino\libraries目录中，然后打开examples文件夹并在该文件夹中运行演示。
+
+## 通信模式
+
+`examples/` 下所有 Arduino 示例使用同一套 UART / I2C 切换方式：
+
+```C++
+/* 通信模式：0=UART，1=I2C */
+#define VOREO_COMM_MODE_UART  0
+#define VOREO_COMM_MODE_I2C   1
+#define VOREO_COMM_MODE       VOREO_COMM_MODE_UART
+```
+
+- 将 `VOREO_COMM_MODE` 设为 `VOREO_COMM_MODE_UART` 使用串口（默认）
+- 将 `VOREO_COMM_MODE` 设为 `VOREO_COMM_MODE_I2C` 使用 I2C（地址 `0x1F`）
+
+示例列表：
+
+| 示例 | 说明 |
+| ---- | ---- |
+| `getASRToText` | TTS 播报与 ASR 文本查询 |
+| `getASRState` | 读取 ASR 状态 |
+| `setWakeUp` | 设置唤醒词 |
+| `SSL` | 声源定位（角度） |
+| `setVolumeAndSpeed` | 设置 TTS 音量 / 语速并播报文本 |
 
 ## 方法
 
@@ -78,13 +105,23 @@
 
    /**
     * @fn setSpeed
-    * @brief 设置 Voreo 模块的语速
-    * @param speed 要设置的语速
+    * @brief 设置 Voreo 模块的 TTS 语速
+    * @param speed 语速，范围 0x00~0x0F
     * @return 设置语速的结果
     * @retval 1 成功
     * @retval 0 失败
     */
    uint8_t setSpeed(uint8_t speed);
+
+   /**
+    * @fn setVolume
+    * @brief 设置 Voreo 模块的 TTS 音量
+    * @param volume 音量，范围 0x00~0x0F
+    * @return 设置音量的结果
+    * @retval 1 成功
+    * @retval 0 失败
+    */
+   uint8_t setVolume(uint8_t volume);
 
    /**
     * @fn getASRState
@@ -116,13 +153,11 @@ Arduino Uno        |      √       |              |             |
 
 ## 历史
 
+- 2026/10/20 - 1.0.1 版本
+  - 合并 UART / I2C 示例，通过 `VOREO_COMM_MODE` 宏切换
+  - 实现 `setSpeed()`，新增 `setVolume()`
 - 2025/12/12 - 1.0.0 版本
 
 ## 创作者
 
 Written by TangJie(jie.tang@dfrobot.com), 2025. (Welcome to our [website](https://www.dfrobot.com/))
-
-
-
-
-

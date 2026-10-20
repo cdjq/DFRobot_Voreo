@@ -234,8 +234,18 @@ uint8_t DFRobot_Voreo::setWakeUp(String data)
 
 uint8_t DFRobot_Voreo::setSpeed(uint8_t speed)
 {
-    
-    return 1;
+    if (speed > VOREO_TTS_LEVEL_MAX) {
+        speed = VOREO_TTS_LEVEL_MAX;
+    }
+    return sendCommand(VOREO_CMD_SET_SPEED, &speed, 1);
+}
+
+uint8_t DFRobot_Voreo::setVolume(uint8_t volume)
+{
+    if (volume > VOREO_TTS_LEVEL_MAX) {
+        volume = VOREO_TTS_LEVEL_MAX;
+    }
+    return sendCommand(VOREO_CMD_SET_VOLUME, &volume, 1);
 }
 
 uint8_t DFRobot_Voreo::getASRState(void)
@@ -354,7 +364,7 @@ uint8_t *DFRobot_Voreo_I2C::readData(uint8_t cmd)
         _pWire->beginTransmission(VOREO_I2C_ADDR);
         _pWire->write(CMD_QUERY_LENGTH);
         _pWire->endTransmission();
-        
+        delay(10);  // 等待设备准备数据
         // 读取长度字节
         if (_pWire->requestFrom(VOREO_I2C_ADDR, 2) == 0) {
             DBG("request length failed 1");
