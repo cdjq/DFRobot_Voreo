@@ -25,7 +25,10 @@ This is a speech-to-text and text-to-speech module.
 
   * This is a speech-to-text and text-to-speech module.
   * Supports UART and I2C. Examples switch mode with the `VOREO_COMM_MODE` macro.
-  * Supports TTS volume and speech-speed control (`0x00`~`0x0F`).
+  * Supports TTS volume and speech-speed control (decimal range `0`~`15`).
+  * TTS: max **128 bytes** UTF-8 per packet; `sendText()` auto-splits on UTF-8 char boundaries.
+  * ASR: max **4096 bytes** UTF-8 per frame; each GTA `A2` frame replaces previous storage.
+  * I2C register mailbox: write app frame to `FIFO(0x10)`; poll `STATUS(0x00)` read 3 bytes; read payload via `DATA(0x03)`.
 
 ## Library Installation
 
@@ -44,6 +47,15 @@ All Arduino examples under `examples/` share the same UART / I2C switch:
 
 - Set `VOREO_COMM_MODE` to `VOREO_COMM_MODE_UART` for UART (default).
 - Set `VOREO_COMM_MODE` to `VOREO_COMM_MODE_I2C` for I2C (address `0x1F`).
+
+### I2C transport notes
+
+- App frame (same as UART): `0x55 | LEN | CMD | DATA | CRC16`.
+- Write: Wire chunks of **28** bytes; TTS app payload max **128** bytes (UTF-8 safe split).
+- ASR read payload max **4096** bytes per frame.
+- Read: write request to `FIFO(0x10)` once → poll `Write STATUS(0x00)` + `Read 3` until `READY(0x02)` → `Write DATA(0x03)` then read `len` in chunks. Do **not** resend the request while polling.
+- `ABORT (0x2F)` clears a stuck assemble/TX state.
+- STATUS: `0=IDLE`, `1=BUSY`, `2=READY`, `3=ERROR`.
 
 Example list:
 
@@ -106,7 +118,7 @@ Example list:
    /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo module
-    * @param speed Speech speed, range 0x00~0x0F
+    * @param speed Speech speed, range 0~15 (decimal)
     * @return The result of setting the speed
     * @retval 1 Success
     * @retval 0 Failed
@@ -116,7 +128,7 @@ Example list:
    /**
     * @fn setVolume
     * @brief Set the TTS volume of the Voreo module
-    * @param volume Volume level, range 0x00~0x0F
+    * @param volume Volume level, range 0~15 (decimal)
     * @return The result of setting the volume
     * @retval 1 Success
     * @retval 0 Failed
@@ -153,6 +165,10 @@ Arduino Uno        |      √       |              |             |
 
 ## History
 
+- 2026/10/20 - Version 1.0.3
+  - TTS max 128B with UTF-8-safe `sendText()` split; ASR frame max 4KB
+- 2026/10/20 - Version 1.0.2
+  - Redesign I2C transport: STATUS 3-byte poll, 28-byte chunks, `uint16_t` payload length
 - 2026/10/20 - Version 1.0.1
   - Merge UART / I2C demos; switch with `VOREO_COMM_MODE`
   - Implement `setSpeed()`, add `setVolume()`

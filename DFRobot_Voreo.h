@@ -26,12 +26,47 @@
 #define VOREO_CMD_ANGLE             (0x04) ///< Angle command
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
-#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (0x00~0x0F)
+#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (0~15)
 #define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Get ASR state command
-#define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0x00~0x0F)
+#define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0~15)
 
-#define VOREO_TTS_LEVEL_MIN         (0x00) ///< TTS volume/speed minimum
-#define VOREO_TTS_LEVEL_MAX         (0x0F) ///< TTS volume/speed maximum
+#define VOREO_TTS_LEVEL_MIN         (0)    ///< TTS volume/speed minimum (decimal)
+#define VOREO_TTS_LEVEL_MAX         (15)   ///< TTS volume/speed maximum (decimal)
+
+/**
+ * I2C register mailbox (Write [reg][data…]; Write [reg] then Read)
+ *  0x00 STATUS R — read 3: [status][len_h][len_l]
+ *  0x03 DATA   R — response stream
+ *  0x04 CTRL   W — 0x2F ABORT
+ *  0x10 FIFO   W — app frame 0x55|LEN|CMD|DATA|CRC
+ */
+#define VOREO_REG_STATUS            (0x00)
+#define VOREO_REG_LEN_H             (0x01)
+#define VOREO_REG_LEN_L             (0x02)
+#define VOREO_REG_DATA              (0x03)
+#define VOREO_REG_CTRL              (0x04)
+#define VOREO_REG_FIFO              (0x10)
+#define VOREO_REG_CTRL_ABORT        (0x2F)
+
+#define VOREO_I2C_STATUS_IDLE       (0x00)
+#define VOREO_I2C_STATUS_BUSY       (0x01)
+#define VOREO_I2C_STATUS_READY      (0x02)
+#define VOREO_I2C_STATUS_ERROR      (0x03)
+#define VOREO_I2C_WIRE_BUF_SIZE     (256)  ///< ESP32 Wire buffer (TTS frame 128+6)
+#define VOREO_I2C_CHUNK_SIZE_AVR    (28)   ///< Arduino Uno Wire ~32
+#define VOREO_I2C_CHUNK_SIZE_ESP    (200)  ///< One-shot TTS frame after setBufferSize(256)
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32) || defined(ESP8266)
+#define VOREO_I2C_CHUNK_SIZE        VOREO_I2C_CHUNK_SIZE_ESP
+#define VOREO_I2C_CHUNK_DELAY_MS    (40)
+#else
+#define VOREO_I2C_CHUNK_SIZE        VOREO_I2C_CHUNK_SIZE_AVR
+#define VOREO_I2C_CHUNK_DELAY_MS    (100)  /* UNO 分包：等从机清 ADDRESS_MATCH stretch */
+#endif
+#define VOREO_TTS_PAYLOAD_MAX       (128)  ///< TTS single packet max (UTF-8 bytes)
+#define VOREO_ASR_PAYLOAD_MAX       (4096) ///< ASR single frame max (UTF-8 bytes)
+#define VOREO_I2C_FRAME_MAX         (VOREO_ASR_PAYLOAD_MAX) ///< Max app payload (ASR read)
+#define VOREO_I2C_STATUS_POLL_MS    (20)   ///< Delay between STATUS polls
+#define VOREO_TTS_SEGMENT_DELAY_MS  (80)   ///< Delay between TTS segments
 
 #define VOREO_REQUEST_TIMEOUT       (10000) ///< Request timeout
 
@@ -89,7 +124,8 @@ public:
 
    /**
     * @fn sendText
-    * @brief Send the text to the Voreo
+    * @brief Send TTS text (UTF-8). Longer text is split into <=128B segments on
+    *        UTF-8 character boundaries (1/2/3/4-byte; Chinese typically 3B).
     * @param pText The text to send
     * @return The result of the send
     * @retval 1 Success
@@ -109,7 +145,7 @@ public:
    /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo
-    * @param speed Speech speed, range 0x00~0x0F (values above max are clamped)
+    * @param speed Speech speed, range 0~15 (decimal; values above max are clamped)
     * @return The result of the set speed
     * @retval 1 Success
     * @retval 0 Failed
@@ -119,7 +155,7 @@ public:
    /**
     * @fn setVolume
     * @brief Set the TTS volume of the Voreo
-    * @param volume Volume level, range 0x00~0x0F (values above max are clamped)
+    * @param volume Volume level, range 0~15 (decimal; values above max are clamped)
     * @return The result of the set volume
     * @retval 1 Success
     * @retval 0 Failed
@@ -152,12 +188,12 @@ public:
     * @brief Send the command to the Voreo
     * @param cmd The command to send
     * @param pData The data to send
-    * @param dataLength The length of the data
+    * @param dataLength The length of the data (max VOREO_I2C_FRAME_MAX for I2C)
     * @return The result of the send command
     * @retval 1 Success
     * @retval 0 Failed
     */
-   virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength);
+   virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength);
 
     virtual uint8_t *readData(uint8_t cmd);
 
@@ -171,11 +207,15 @@ public:
     ~DFRobot_Voreo_I2C();
 
     uint8_t begin(void);
-    virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength);
+    virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength);
 
     virtual uint8_t *readData(uint8_t cmd);
 private:
     TwoWire *_pWire = NULL;
+    uint8_t writeRaw(const uint8_t *data, uint16_t len);
+    uint8_t pollStatus(uint16_t *outLen);
+    uint8_t *readFrameByLen(uint16_t frameLen, uint8_t expectCmd);
+    void sendAbort(void);
 };
 
 class DFRobot_Voreo_UART : public DFRobot_Voreo
@@ -186,7 +226,7 @@ public:
     ~DFRobot_Voreo_UART();
 
     uint8_t begin(void);
-    virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength);
+    virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength);
 
     virtual uint8_t *readData(uint8_t cmd);
 private:

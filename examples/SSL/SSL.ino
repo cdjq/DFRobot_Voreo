@@ -25,7 +25,7 @@
 /* 通信模式：0=UART，1=I2C */
 #define VOREO_COMM_MODE_UART  0
 #define VOREO_COMM_MODE_I2C   1
-#define VOREO_COMM_MODE       VOREO_COMM_MODE_UART
+#define VOREO_COMM_MODE       VOREO_COMM_MODE_I2C
 
 #if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
@@ -49,28 +49,34 @@ void setup()
 #endif
 #endif
     Serial.begin(115200);
+    delay(500);
 #if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
     Serial.println("DFRobot_Voreo UART example");
 #else
     Serial.println("DFRobot_Voreo I2C example");
+    Wire.begin();
+    Wire.beginTransmission(0x1F);
+    uint8_t probe = Wire.endTransmission();
+    Serial.print("I2C probe 0x1F: ");
+    Serial.println(probe); /* 0=ACK, 非0=无应答/接线或模组非I2C模式 */
 #endif
+    Serial.println("calling begin()...");
+    Serial.flush();
     while (!voreo.begin()) {
         Serial.println("Voreo begin failed");
+        Serial.flush();
         delay(1000);
     }
     Serial.println("Voreo begin ok");
-    /* 语速范围：0~15（十进制） */
-    voreo.setSpeed(4);
-    delay(200);
-    /* 音量范围：0~15（十进制） */
-    voreo.setVolume(3);
-    delay(200);
 }
 
 void loop()
 {
+    Serial.println("getAngle...");
+    Serial.flush();
     uint16_t angle = voreo.getAngle();
     Serial.print("Angle: ");
     Serial.println(angle);
-    delay(100);
+    Serial.flush();
+    delay(200);
 }

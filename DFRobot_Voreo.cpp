@@ -40,13 +40,13 @@ static void buildRequestFrame(uint8_t *buf, uint8_t cmd)
 }
 
 // 构建命令帧
-static void buildCommandFrame(uint8_t *buf, uint8_t cmd, uint8_t *pData, uint8_t dataLength)
+static void buildCommandFrame(uint8_t *buf, uint8_t cmd, uint8_t *pData, uint16_t dataLength)
 {
     buf[0] = VOREO_CMD_HEAD;
     buf[1] = (dataLength >> 8) & 0xff;
     buf[2] = dataLength & 0xff;
     buf[3] = cmd;
-    if (dataLength > 0) {
+    if (dataLength > 0 && pData != NULL) {
         memcpy(buf + 4, pData, dataLength);
     }
     uint16_t crc = calculateCRC16(buf, dataLength + 4);
@@ -196,11 +196,66 @@ String DFRobot_Voreo::requestText(void)
     return text;
 }
 
+/** UTF-8 lead-byte → character length (ASCII=1, Latin ext=2, CJK≈3, emoji=4) */
+static uint8_t utf8CharByteLen(uint8_t lead)
+{
+    if ((lead & 0x80) == 0x00) {
+        return 1;
+    }
+    if ((lead & 0xE0) == 0xC0) {
+        return 2;
+    }
+    if ((lead & 0xF0) == 0xE0) {
+        return 3;
+    }
+    if ((lead & 0xF8) == 0xF0) {
+        return 4;
+    }
+    return 1;
+}
+
+/** Largest prefix of [s, s+total) with length <= maxLen that ends on a UTF-8 char boundary */
+static uint16_t utf8SafeChunkLen(const uint8_t *s, uint16_t total, uint16_t maxLen)
+{
+    if (total <= maxLen) {
+        return total;
+    }
+    uint16_t i = 0;
+    while (i < maxLen) {
+        uint8_t cl = utf8CharByteLen(s[i]);
+        if ((uint16_t)(i + cl) > maxLen) {
+            break;
+        }
+        if ((uint16_t)(i + cl) > total) {
+            break;
+        }
+        i = (uint16_t)(i + cl);
+    }
+    return (i == 0) ? 1 : i;
+}
+
 uint8_t DFRobot_Voreo::sendText(uint8_t *pText)
 {
-    uint16_t length = strlen(pText);
-    sendCommand(VOREO_CMD_SEND_TEXT, pText, length);
-    return 1;
+    if (pText == NULL) {
+        return RETURN_ERROR;
+    }
+    uint16_t total = (uint16_t)strlen((const char *)pText);
+    uint16_t offset = 0;
+    while (offset < total) {
+        uint16_t remain = (uint16_t)(total - offset);
+        uint16_t chunk = utf8SafeChunkLen(pText + offset, remain, VOREO_TTS_PAYLOAD_MAX);
+        if (chunk == 0) {
+            return RETURN_ERROR;
+        }
+        if (!sendCommand(VOREO_CMD_SEND_TEXT, pText + offset, chunk)) {
+            return RETURN_ERROR;
+        }
+        offset = (uint16_t)(offset + chunk);
+        if (offset < total) {
+            delay(VOREO_TTS_SEGMENT_DELAY_MS);
+        }
+    }
+    return RETURN_OK;
 }
 
 uint8_t DFRobot_Voreo::sendText(String text)
@@ -222,8 +277,14 @@ uint16_t DFRobot_Voreo::getAngle(void)
 
 uint8_t DFRobot_Voreo::setWakeUp(uint8_t* pData)
 {
-    sendCommand(VOREO_CMD_WAKE_UP, pData, strlen(pData));
-    return 1;
+    if (pData == NULL) {
+        return RETURN_ERROR;
+    }
+    uint16_t length = (uint16_t)strlen((const char *)pData);
+    if (length > VOREO_I2C_FRAME_MAX) {
+        length = VOREO_I2C_FRAME_MAX;
+    }
+    return sendCommand(VOREO_CMD_WAKE_UP, pData, length);
 }
 
 uint8_t DFRobot_Voreo::setWakeUp(String data)
@@ -273,241 +334,185 @@ DFRobot_Voreo_I2C::~DFRobot_Voreo_I2C()
 uint8_t DFRobot_Voreo_I2C::begin(void)
 {
     _pWire->begin();
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+    /* Default Wire buffer is 128; TTS app frame is 128+6 — enlarge to one-shot write */
+    _pWire->setBufferSize(VOREO_I2C_WIRE_BUF_SIZE);
+#endif
+#if defined(WIRE_HAS_TIMEOUT) || defined(ESP32) || defined(ESP8266) || defined(ARDUINO_ARCH_ESP32)
+    _pWire->setTimeOut(2000);
+#endif
     return DFRobot_Voreo::begin();
 }
 
-uint8_t DFRobot_Voreo_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
+uint8_t DFRobot_Voreo_I2C::writeRaw(const uint8_t *data, uint16_t len)
 {
-    // 常量定义
-    const uint16_t MAX_I2C_PACKET_SIZE = 28;      // I2C最大数据包长度
-    const uint16_t PACKET_DELAY_MS = 10;          // 分包发送间隔(ms)
-    
-    // 构建命令帧
-    uint16_t totalLength = dataLength + 6;
-    uint8_t buf[totalLength];
-    buildCommandFrame(buf, cmd, pData, dataLength);
-    
-    // 如果数据长度超过I2C包大小限制，进行分包发送
-    if (totalLength > MAX_I2C_PACKET_SIZE) {
-        DBG("data length exceeds I2C packet size, splitting into multiple packets");
-        uint16_t offset = 0;
-        
-        while (offset < totalLength) {
-            // 计算本次发送的字节数（最多32字节）
-            uint8_t chunkSize = (totalLength - offset > MAX_I2C_PACKET_SIZE) 
-                                ? MAX_I2C_PACKET_SIZE 
-                                : (totalLength - offset);
-            
-            // 发送数据块
-            _pWire->beginTransmission(VOREO_I2C_ADDR);
-            uint8_t bytesWritten = _pWire->write(buf + offset, chunkSize);
-            uint8_t error = _pWire->endTransmission();
-            
-            // 检查发送是否成功
-            if (error != 0 || bytesWritten != chunkSize) {
-                DBG("I2C transmission error during packet splitting");
-                return 0;  // 发送失败
-            }
-            
-            offset += chunkSize;
-            
-            // 如果不是最后一包，添加延迟
-            if (offset < totalLength) {
-                delay(PACKET_DELAY_MS);
-            }
-        }
-        
-        return 1;  // 分包发送成功
-    } else {
-        // 数据长度在限制内，直接发送
+    /* 每笔 Write: [REG_FIFO][chunk…]，从机追加到应用帧缓冲 */
+    const uint16_t maxPayload = (VOREO_I2C_CHUNK_SIZE > 1) ? (uint16_t)(VOREO_I2C_CHUNK_SIZE - 1) : 1;
+    uint16_t offset = 0;
+    while (offset < len) {
+        uint16_t remain = len - offset;
+        uint16_t chunk = (remain > maxPayload) ? maxPayload : remain;
         _pWire->beginTransmission(VOREO_I2C_ADDR);
-        uint8_t bytesWritten = _pWire->write(buf, totalLength);
-        uint8_t error = _pWire->endTransmission();
-        
-        // 检查发送是否成功
-        if (error != 0 || bytesWritten != totalLength) {
-            DBG("I2C transmission error");
-            return 0;  // 发送失败
+        size_t written = _pWire->write((uint8_t)VOREO_REG_FIFO);
+        written += _pWire->write(data + offset, chunk);
+        uint8_t err = _pWire->endTransmission(true);
+        if (err != 0 || written != (size_t)(chunk + 1)) {
+            DBG("I2C FIFO write failed");
+            return 0;
         }
-        
-        return 1;  // 发送成功
+        offset = (uint16_t)(offset + chunk);
+        if (offset < len) {
+            delay(VOREO_I2C_CHUNK_DELAY_MS);
+        }
     }
+    return 1;
 }
 
-uint8_t *DFRobot_Voreo_I2C::readData(uint8_t cmd)
+void DFRobot_Voreo_I2C::sendAbort(void)
 {
-    // 常量定义
-    const uint8_t CMD_QUERY_LENGTH = 0x21;        // 查询数据长度命令
-    const uint8_t MAX_RETRY_COUNT = 10;           // 最大重试次数
-    const uint16_t MAX_I2C_PACKET_SIZE = 32;      // I2C最大数据包长度
-    const uint16_t INVALID_LENGTH = 0xFFFF;       // 无效长度标识
-    const uint16_t RESPONSE_DELAY_MS = 100;       // 响应延迟(ms)
-    
-    // 构建并发送初始请求帧
-    uint8_t requestBuf[6];
-    buildRequestFrame(requestBuf, cmd);
     _pWire->beginTransmission(VOREO_I2C_ADDR);
-    _pWire->write(requestBuf, 6);
+    _pWire->write((uint8_t)VOREO_REG_CTRL);
+    _pWire->write((uint8_t)VOREO_REG_CTRL_ABORT);
     _pWire->endTransmission();
-    delay(RESPONSE_DELAY_MS);
-    
-    // 初始化状态变量
+    delay(VOREO_I2C_STATUS_POLL_MS);
+}
+
+uint8_t DFRobot_Voreo_I2C::pollStatus(uint16_t *outLen)
+{
+    *outLen = 0;
+    _pWire->beginTransmission(VOREO_I2C_ADDR);
+    _pWire->write((uint8_t)VOREO_REG_STATUS);
+    if (_pWire->endTransmission() != 0) {
+        return VOREO_I2C_STATUS_ERROR;
+    }
+    delay(30); /* 等从机任务处理选寄存器后再 Read */
+    if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, (uint8_t)3) != 3) {
+        DBG("STATUS read failed");
+        return VOREO_I2C_STATUS_ERROR;
+    }
+    uint8_t status = _pWire->read();
+    uint16_t len = ((uint16_t)_pWire->read() << 8) | _pWire->read();
+    *outLen = len;
+    return status;
+}
+
+uint8_t *DFRobot_Voreo_I2C::readFrameByLen(uint16_t frameLen, uint8_t expectCmd)
+{
+    if (frameLen < 6 || frameLen > (VOREO_I2C_FRAME_MAX + 6)) {
+        return NULL;
+    }
+
+    /* 选中 DATA 寄存器后再流式 Read */
+    _pWire->beginTransmission(VOREO_I2C_ADDR);
+    _pWire->write((uint8_t)VOREO_REG_DATA);
+    if (_pWire->endTransmission() != 0) {
+        return NULL;
+    }
+    delay(30);
+
     uint8_t *pBuf = NULL;
     uint8_t requestState = DATA_STATIC_HEAD;
     uint16_t length = 0;
     uint16_t dataLength = 0;
-    uint8_t retryCount = 0;
-    
-    // 主循环：尝试读取数据
-    while (retryCount < MAX_RETRY_COUNT) {
-        // 查询数据长度
-        _pWire->beginTransmission(VOREO_I2C_ADDR);
-        _pWire->write(CMD_QUERY_LENGTH);
-        _pWire->endTransmission();
-        delay(10);  // 等待设备准备数据
-        // 读取长度字节
-        if (_pWire->requestFrom(VOREO_I2C_ADDR, 2) == 0) {
-            DBG("request length failed 1");
-            retryCount++;
-            delay(RESPONSE_DELAY_MS);
-            continue;
+    uint16_t totalBytesRead = 0;
+    uint8_t result = 0;
+
+    while (totalBytesRead < frameLen) {
+        uint16_t remain = frameLen - totalBytesRead;
+        uint8_t chunk = (remain > VOREO_I2C_CHUNK_SIZE) ? VOREO_I2C_CHUNK_SIZE : (uint8_t)remain;
+        if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, chunk) == 0) {
+            DBG("DATA requestFrom failed");
+            if (pBuf) {
+                free(pBuf);
+            }
+            return NULL;
         }
-        
-        // 解析长度（大端格式）
-        uint16_t len = (_pWire->read() << 8) | _pWire->read();
-        // DBG("len:");
-        // Serial.println(len, HEX);
-        
-        // 检查长度有效性
-        if (len == INVALID_LENGTH) {
-            DBG("request length failed 2 - invalid length");
-            // 重新发送请求帧
-            _pWire->beginTransmission(VOREO_I2C_ADDR);
-            _pWire->write(requestBuf, 6);
-            _pWire->endTransmission();
-            retryCount++;
-            delay(RESPONSE_DELAY_MS);
-            continue;
-        }
-        
-        // 分包读取数据（支持超过MAX_I2C_PACKET_SIZE的长包）
-        uint16_t totalBytesRead = 0;
-        uint8_t result = 0;
-        bool needRetry = false;
-        
-        // 循环读取直到读取完len字节
-        while (totalBytesRead < len && !needRetry) {
-            // 计算本次要读取的字节数（最多MAX_I2C_PACKET_SIZE字节）
-            uint16_t bytesToRead = len - totalBytesRead;
-            if (bytesToRead > MAX_I2C_PACKET_SIZE) {
-                bytesToRead = MAX_I2C_PACKET_SIZE;
-            }
-            
-            // 请求数据块
-            if (_pWire->requestFrom(VOREO_I2C_ADDR, bytesToRead) == 0) {
-                DBG("request data failed");
-                needRetry = true;
-                break;
-            }
-            
-            // 读取并处理数据
-            for (uint16_t i = 0; i < bytesToRead && totalBytesRead < len; i++) {
-                if (!_pWire->available()) {
-                    DBG("I2C data not available");
-                    needRetry = true;
-                    break;
-                }
-                
-                uint8_t data = _pWire->read();
-                result = processDataState(data, cmd, &requestState, &length, &dataLength, &pBuf);
-                totalBytesRead++;
-                
-                // 检查处理结果
-                if (result == 1) {  // 错误
-                    if (pBuf) {
-                        free(pBuf);
-                        pBuf = NULL;
-                    }
-                    DBG("data processing error");
-                    // 重置状态并标记需要重试
-                    requestState = DATA_STATIC_HEAD;
-                    length = 0;
-                    dataLength = 0;
-                    needRetry = true;
-                    break;
-                } else if (result == 2) {  // 状态机完成
-                    // 状态机完成时，应该已经读取完所有数据
-                    // 如果还没读完，说明协议不匹配，需要重试
-                    if (totalBytesRead < len) {
-                        DBG("state machine complete but data not fully read");
-                        if (pBuf) {
-                            free(pBuf);
-                            pBuf = NULL;
-                        }
-                        requestState = DATA_STATIC_HEAD;
-                        length = 0;
-                        dataLength = 0;
-                        needRetry = true;
-                    }
-                    // 如果已读完，跳出循环，稍后进行验证
-                    break;
-                }
-            }
-            
-            // 如果还有剩余数据需要读取且未出错，添加短暂延迟
-            if (totalBytesRead < len && !needRetry && result != 2) {
-                delay(10);  // 短暂延迟，等待设备准备下一包数据
-            }
-        }
-        
-        // 检查是否成功读取了所有数据
-        if (!needRetry && totalBytesRead >= len) {
-            // 如果状态机已完成，进行CRC验证
-            if (result == 2) {
-                uint8_t *validatedBuf = validateAndReturnData(pBuf, length);
-                if (validatedBuf != NULL) {
-                    return validatedBuf;  // 验证成功，返回数据
-                }
-                // CRC验证失败，清理并标记需要重试
+        for (uint8_t i = 0; i < chunk && totalBytesRead < frameLen; i++) {
+            if (!_pWire->available()) {
                 if (pBuf) {
                     free(pBuf);
-                    pBuf = NULL;
                 }
-                requestState = DATA_STATIC_HEAD;
-                length = 0;
-                dataLength = 0;
-                DBG("CRC validation failed, retrying");
-                needRetry = true;
-            } else {
-                // 数据读取完成但状态机未完成，需要重试
-                DBG("data read complete but state machine not finished");
-                needRetry = true;
+                return NULL;
             }
-        } else if (!needRetry && totalBytesRead < len) {
-            DBG("incomplete data read");
-            needRetry = true;
+            uint8_t data = _pWire->read();
+            result = processDataState(data, expectCmd, &requestState, &length, &dataLength, &pBuf);
+            totalBytesRead++;
+            if (result == 1) {
+                if (pBuf) {
+                    free(pBuf);
+                }
+                return NULL;
+            }
         }
-        
-        // 如果需要重试或数据未完成，重新发送请求帧
-        if (needRetry || result == 0) {
-            if (result == 0) {
-                DBG("request length failed 4 - incomplete data");
-            }
-            // 重新发送请求帧
-            _pWire->beginTransmission(VOREO_I2C_ADDR);
-            _pWire->write(requestBuf, 6);
-            _pWire->endTransmission();
-            retryCount++;
-            delay(RESPONSE_DELAY_MS);
+        if (totalBytesRead < frameLen) {
+            delay(VOREO_I2C_CHUNK_DELAY_MS);
         }
     }
-    
-    // 超时清理
-    if (pBuf) {
-        free(pBuf);
-        pBuf = NULL;
+
+    if (result != 2) {
+        if (pBuf) {
+            free(pBuf);
+        }
+        return NULL;
     }
-    DBG("request timeout");
+    return validateAndReturnData(pBuf, length);
+}
+
+uint8_t DFRobot_Voreo_I2C::sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength)
+{
+    if (dataLength > VOREO_I2C_FRAME_MAX) {
+        dataLength = VOREO_I2C_FRAME_MAX;
+    }
+    uint16_t totalLength = dataLength + 6;
+    uint8_t *buf = (uint8_t *)malloc(totalLength);
+    if (buf == NULL) {
+        return 0;
+    }
+    buildCommandFrame(buf, cmd, pData, dataLength);
+    uint8_t ok = writeRaw(buf, totalLength);
+    free(buf);
+    return ok;
+}
+
+uint8_t *DFRobot_Voreo_I2C::readData(uint8_t cmd)
+{
+    uint8_t requestBuf[6];
+    buildRequestFrame(requestBuf, cmd);
+
+    /* 最多整事务重发 1 次；轮询 STATUS 期间不重发业务帧 */
+    for (uint8_t txn = 0; txn < 2; txn++) {
+        if (!writeRaw(requestBuf, 6)) {
+            sendAbort();
+            continue;
+        }
+        delay(20); /* 等从机解析并置 READY */
+
+        uint16_t frameLen = 0;
+        uint8_t status = VOREO_I2C_STATUS_BUSY;
+        uint32_t start = millis();
+        while ((millis() - start) < VOREO_REQUEST_TIMEOUT) {
+            status = pollStatus(&frameLen);
+            if (status == VOREO_I2C_STATUS_READY && frameLen >= 6) {
+                delay(VOREO_I2C_STATUS_POLL_MS);
+                uint8_t *frame = readFrameByLen(frameLen, cmd);
+                if (frame != NULL) {
+                    return frame;
+                }
+                DBG("DATA read/CRC failed, abort and retry txn");
+                sendAbort();
+                break;
+            }
+            if (status == VOREO_I2C_STATUS_ERROR) {
+                DBG("STATUS ERROR");
+                sendAbort();
+                break;
+            }
+            /* IDLE/BUSY：继续轮询，不重发请求 */
+            delay(VOREO_I2C_STATUS_POLL_MS);
+        }
+    }
+
+    DBG("I2C readData timeout");
     return NULL;
 }
 
@@ -526,11 +531,19 @@ uint8_t DFRobot_Voreo_UART::begin(void)
     return DFRobot_Voreo::begin();
 }
 
-uint8_t DFRobot_Voreo_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint8_t dataLength)
+uint8_t DFRobot_Voreo_UART::sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength)
 {
-    uint8_t buf[dataLength + 6];
+    if (dataLength > VOREO_I2C_FRAME_MAX) {
+        dataLength = VOREO_I2C_FRAME_MAX;
+    }
+    uint16_t totalLength = dataLength + 6;
+    uint8_t *buf = (uint8_t *)malloc(totalLength);
+    if (buf == NULL) {
+        return 0;
+    }
     buildCommandFrame(buf, cmd, pData, dataLength);
-    _pSerial->write(buf, dataLength + 6);
+    _pSerial->write(buf, totalLength);
+    free(buf);
     return 1;
 }
 

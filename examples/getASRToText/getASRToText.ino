@@ -39,8 +39,8 @@ DFRobot_Voreo_UART voreo(&Serial1);
 DFRobot_Voreo_I2C voreo;
 #endif
 
-char *text = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
-
+// char *text = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
+char *text = "欢迎使用DFRobotVoreo语音识别模块";
 void setup()
 {
 #if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
@@ -51,6 +51,7 @@ void setup()
 #endif
 #endif
     Serial.begin(115200);
+    delay(1000);
 #if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
     Serial.println("DFRobot_Voreo UART example");
 #else
@@ -61,24 +62,31 @@ void setup()
         delay(1000);
     }
     Serial.println("Voreo begin ok");
+    delay(500);
+
     /* 语速范围：0~15（十进制） */
+    Serial.println("setSpeed...");
     voreo.setSpeed(4);
-    delay(200);
+    delay(500);
+
     /* 音量范围：0~15（十进制） */
-    voreo.setVolume(3);
-    delay(200);
+    Serial.println("setVolume...");
+    voreo.setVolume(6);
+    delay(500);
+
+    Serial.println("sendText...");
     voreo.sendText(text);
+    Serial.println("sendText done");
     delay(8000);
 }
 
 void loop()
 {
-
     if (voreo.queryText()) {
         String asrText = voreo.requestText();
         Serial.println(asrText);
     } else {
         Serial.println("queryText failed");
     }
-    delay(100);
+    delay(500);
 }
