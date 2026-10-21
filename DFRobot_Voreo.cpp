@@ -338,8 +338,11 @@ uint8_t DFRobot_Voreo_I2C::begin(void)
     /* Default Wire buffer is 128; TTS app frame is 128+6 — enlarge to one-shot write */
     _pWire->setBufferSize(VOREO_I2C_WIRE_BUF_SIZE);
 #endif
-#if defined(WIRE_HAS_TIMEOUT) || defined(ESP32) || defined(ESP8266) || defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32) || defined(ESP8266) || defined(ARDUINO_ARCH_ESP32)
     _pWire->setTimeOut(2000);
+#elif defined(ARDUINO_ARCH_AVR)
+    /* UNO：无超时会在 SCL stretch 时永远卡在 endTransmission */
+    _pWire->setWireTimeout(3000UL, true);
 #endif
     return DFRobot_Voreo::begin();
 }
@@ -386,7 +389,7 @@ uint8_t DFRobot_Voreo_I2C::pollStatus(uint16_t *outLen)
         return VOREO_I2C_STATUS_ERROR;
     }
     delay(30); /* 等从机任务处理选寄存器后再 Read */
-    if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, (uint8_t)3) != 3) {
+    if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, (uint8_t)3) != (uint8_t)3) {
         DBG("STATUS read failed");
         return VOREO_I2C_STATUS_ERROR;
     }
@@ -398,7 +401,8 @@ uint8_t DFRobot_Voreo_I2C::pollStatus(uint16_t *outLen)
 
 uint8_t *DFRobot_Voreo_I2C::readFrameByLen(uint16_t frameLen, uint8_t expectCmd)
 {
-    if (frameLen < 6 || frameLen > (VOREO_I2C_FRAME_MAX + 6)) {
+    if (frameLen < 6 || frameLen > VOREO_I2C_HOST_FRAME_MAX) {
+        DBG("frameLen out of host limit");
         return NULL;
     }
 
@@ -420,8 +424,9 @@ uint8_t *DFRobot_Voreo_I2C::readFrameByLen(uint16_t frameLen, uint8_t expectCmd)
     while (totalBytesRead < frameLen) {
         uint16_t remain = frameLen - totalBytesRead;
         uint8_t chunk = (remain > VOREO_I2C_CHUNK_SIZE) ? VOREO_I2C_CHUNK_SIZE : (uint8_t)remain;
-        if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, chunk) == 0) {
-            DBG("DATA requestFrom failed");
+        uint8_t got = _pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, chunk);
+        if (got != chunk) {
+            DBG("DATA requestFrom short");
             if (pBuf) {
                 free(pBuf);
             }

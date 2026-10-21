@@ -53,18 +53,24 @@
 #define VOREO_I2C_STATUS_READY      (0x02)
 #define VOREO_I2C_STATUS_ERROR      (0x03)
 #define VOREO_I2C_WIRE_BUF_SIZE     (256)  ///< ESP32 Wire buffer (TTS frame 128+6)
-#define VOREO_I2C_CHUNK_SIZE_AVR    (28)   ///< Arduino Uno Wire ~32
+#define VOREO_I2C_CHUNK_SIZE_AVR    (16)   ///< Uno Wire~32；偏小降低 stretch 窗口（含 1B REG）
 #define VOREO_I2C_CHUNK_SIZE_ESP    (200)  ///< One-shot TTS frame after setBufferSize(256)
 #if defined(ESP32) || defined(ARDUINO_ARCH_ESP32) || defined(ESP8266)
 #define VOREO_I2C_CHUNK_SIZE        VOREO_I2C_CHUNK_SIZE_ESP
 #define VOREO_I2C_CHUNK_DELAY_MS    (40)
 #else
 #define VOREO_I2C_CHUNK_SIZE        VOREO_I2C_CHUNK_SIZE_AVR
-#define VOREO_I2C_CHUNK_DELAY_MS    (100)  /* UNO 分包：等从机清 ADDRESS_MATCH stretch */
+#define VOREO_I2C_CHUNK_DELAY_MS    (200)  /* UNO 分包间隔：等从机 RX 放 SCL */
 #endif
 #define VOREO_TTS_PAYLOAD_MAX       (128)  ///< TTS single packet max (UTF-8 bytes)
 #define VOREO_ASR_PAYLOAD_MAX       (4096) ///< ASR single frame max (UTF-8 bytes)
 #define VOREO_I2C_FRAME_MAX         (VOREO_ASR_PAYLOAD_MAX) ///< Max app payload (ASR read)
+/* UNO SRAM 小：单帧应答上限（含头尾）；ESP 主机可用满量 ASR */
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32) || defined(ESP8266)
+#define VOREO_I2C_HOST_FRAME_MAX    (VOREO_I2C_FRAME_MAX + 6)
+#else
+#define VOREO_I2C_HOST_FRAME_MAX    (512)
+#endif
 #define VOREO_I2C_STATUS_POLL_MS    (20)   ///< Delay between STATUS polls
 #define VOREO_TTS_SEGMENT_DELAY_MS  (80)   ///< Delay between TTS segments
 

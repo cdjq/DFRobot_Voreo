@@ -75,18 +75,24 @@ void setup()
     delay(500);
 
     Serial.println("sendText...");
-    voreo.sendText(text);
-    Serial.println("sendText done");
+    Serial.println(voreo.sendText(text) ? "sendText ok" : "sendText fail");
+    Serial.println("TTS playing; then speak after wake");
     delay(8000);
+    Serial.println(">>> READY: wake GTA and speak (short then long) <<<");
 }
 
 void loop()
 {
     if (voreo.queryText()) {
+        Serial.println("queryText hit, requestText...");
         String asrText = voreo.requestText();
+        Serial.print("ASR len=");
+        Serial.print(asrText.length());
+        Serial.print(" text=");
         Serial.println(asrText);
+        Serial.println(">>> speak again for next take (try LONGER sentence) <<<");
     } else {
-        Serial.println("queryText failed");
+        Serial.println("queryText: no text yet");
     }
     delay(500);
 }

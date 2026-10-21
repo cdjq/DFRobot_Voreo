@@ -26,7 +26,7 @@
 /* 通信模式：0=UART，1=I2C */
 #define VOREO_COMM_MODE_UART  0
 #define VOREO_COMM_MODE_I2C   1
-#define VOREO_COMM_MODE       VOREO_COMM_MODE_UART
+#define VOREO_COMM_MODE       VOREO_COMM_MODE_I2C
 
 #if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
@@ -63,16 +63,19 @@ void setup()
     }
 
     Serial.println("Voreo begin ok");
+    Serial.println("setSpeed...");
     /* 语速范围：0~15（十进制） */
-    voreo.setSpeed(4);
+    Serial.println(voreo.setSpeed(4) ? "setSpeed ok" : "setSpeed fail");
     delay(200);
+    Serial.println("setVolume...");
     /* 音量范围：0~15（十进制） */
-    voreo.setVolume(3);
+    Serial.println(voreo.setVolume(3) ? "setVolume ok" : "setVolume fail");
     delay(200);
 }
 
 void loop()
 {
-    voreo.sendText(text);
+    Serial.println("sendText...");
+    Serial.println(voreo.sendText(text) ? "sendText ok" : "sendText fail");
     delay(8000);
 }
