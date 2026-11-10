@@ -61,7 +61,7 @@
 | `getASRToText` | TTS 播报、音量 / 语速与 ASR 文本查询 |
 | `getASRState` | 读取 ASR 状态 |
 | `setWakeUp` | 设置唤醒词 |
-| `SSL` | 声源定位（角度） |
+| `SSL` | 声源定位（角度）/ DOA 模式 |
 
 ## 方法
 
@@ -112,6 +112,18 @@
    uint16_t getAngle(void);
 
    /**
+    * @fn setDoaMode
+    * @brief 设置 DOA 运行模式（0 关 / 1 开 / 2 LISTENING）
+    */
+   uint8_t setDoaMode(uint8_t mode);
+
+   /**
+    * @fn getDoaMode
+    * @brief 查询 DOA 运行模式
+    */
+   uint8_t getDoaMode(void);
+
+   /**
     * @fn setSpeed
     * @brief 设置 Voreo 模块的 TTS 语速
     * @param speed 语速，范围 1~5（十进制）
@@ -120,6 +132,7 @@
     * @retval 0 失败
     */
    uint8_t setSpeed(uint8_t speed);
+   uint8_t getSpeed(void);
 
    /**
     * @fn setVolume
@@ -130,6 +143,7 @@
     * @retval 0 失败
     */
    uint8_t setVolume(uint8_t volume);
+   uint8_t getVolume(void);
 
    /**
     * @fn getASRState

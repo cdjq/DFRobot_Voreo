@@ -27,14 +27,19 @@
 #define VOREO_CMD_ANGLE             (0x04) ///< Angle command
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
-#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (1~5)
+#define VOREO_CMD_SET_SPEED         (0x07) ///< TTS speed: query LEN=0; set LEN=1 (1~5)
 #define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Query RGB/device state (rgb_sm_state_t, non-consuming)
-#define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0~15)
+#define VOREO_CMD_SET_VOLUME        (0x09) ///< TTS volume: query LEN=0; set LEN=1 (0~15)
+#define VOREO_CMD_DOA_MODE          (0x0A) ///< DOA mode: query LEN=0; set LEN=1 (0 off / 1 on / 2 LISTENING)
 
 #define VOREO_TTS_SPEED_MIN         (1)    ///< TTS speed minimum (decimal)
 #define VOREO_TTS_SPEED_MAX         (5)    ///< TTS speed maximum (decimal)
 #define VOREO_TTS_VOLUME_MIN        (0)    ///< TTS volume minimum (decimal)
 #define VOREO_TTS_VOLUME_MAX        (15)   ///< TTS volume maximum (decimal)
+
+#define VOREO_DOA_MODE_OFF                 (0) ///< DOA off
+#define VOREO_DOA_MODE_ON                  (1) ///< DOA on
+#define VOREO_DOA_MODE_LISTENING           (2) ///< DOA in LISTENING
 
 /**
  * I2C register mailbox (Write [reg][data…]; Write [reg] then Read)
@@ -152,8 +157,29 @@ public:
    uint16_t getAngle(void);
 
    /**
+    * @fn setDoaMode
+    * @brief Set DOA run mode (CMD 0x0A, LEN=1)
+    * @param mode 0 off / 1 on / 2 LISTENING
+    * @return The result of the set
+    * @retval 1 Success
+    * @retval 0 Failed
+    */
+   uint8_t setDoaMode(uint8_t mode);
+
+   /**
+    * @fn getDoaMode
+    * @brief Query DOA run mode (CMD 0x0A, LEN=0)
+    * @return Current DOA mode
+    * @retval 0 off
+    * @retval 1 on
+    * @retval 2 LISTENING
+    * @retval 0xFF Failed
+    */
+   uint8_t getDoaMode(void);
+
+   /**
     * @fn setSpeed
-    * @brief Set the TTS speech speed of the Voreo
+    * @brief Set the TTS speech speed of the Voreo (CMD 0x07, LEN=1)
     * @param speed Speech speed, range 1~5 (decimal; out-of-range values are clamped)
     * @return The result of the set speed
     * @retval 1 Success
@@ -162,14 +188,28 @@ public:
    uint8_t setSpeed(uint8_t speed);
 
    /**
+    * @fn getSpeed
+    * @brief Query the TTS speech speed (CMD 0x07, LEN=0)
+    * @return Current speed 1~5, or 0xFF on failure
+    */
+   uint8_t getSpeed(void);
+
+   /**
     * @fn setVolume
-    * @brief Set the TTS volume of the Voreo
+    * @brief Set the TTS volume of the Voreo (CMD 0x09, LEN=1)
     * @param volume Volume level, range 0~15 (decimal; values above max are clamped)
     * @return The result of the set volume
     * @retval 1 Success
     * @retval 0 Failed
     */
    uint8_t setVolume(uint8_t volume);
+
+   /**
+    * @fn getVolume
+    * @brief Query the TTS volume (CMD 0x09, LEN=0)
+    * @return Current volume 0~15, or 0xFF on failure
+    */
+   uint8_t getVolume(void);
 
    /**
     * @fn setWakeUp

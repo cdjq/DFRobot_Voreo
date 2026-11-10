@@ -338,6 +338,25 @@ uint16_t DFRobot_Voreo::getAngle(void)
     return angle;
 }
 
+uint8_t DFRobot_Voreo::setDoaMode(uint8_t mode)
+{
+    if (mode > VOREO_DOA_MODE_LISTENING) {
+        mode = VOREO_DOA_MODE_LISTENING;
+    }
+    return sendCommand(VOREO_CMD_DOA_MODE, &mode, 1);
+}
+
+uint8_t DFRobot_Voreo::getDoaMode(void)
+{
+    uint8_t *pBuf = readData(VOREO_CMD_DOA_MODE);
+    if (pBuf == NULL) {
+        return 0xFF;
+    }
+    uint8_t mode = pBuf[4];
+    free(pBuf);
+    return mode;
+}
+
 uint8_t DFRobot_Voreo::setWakeUp(uint8_t* pData)
 {
     if (pData == NULL) {
@@ -366,12 +385,34 @@ uint8_t DFRobot_Voreo::setSpeed(uint8_t speed)
     return sendCommand(VOREO_CMD_SET_SPEED, &speed, 1);
 }
 
+uint8_t DFRobot_Voreo::getSpeed(void)
+{
+    uint8_t *pBuf = readData(VOREO_CMD_SET_SPEED);
+    if (pBuf == NULL) {
+        return 0xFF;
+    }
+    uint8_t speed = pBuf[4];
+    free(pBuf);
+    return speed;
+}
+
 uint8_t DFRobot_Voreo::setVolume(uint8_t volume)
 {
     if (volume > VOREO_TTS_VOLUME_MAX) {
         volume = VOREO_TTS_VOLUME_MAX;
     }
     return sendCommand(VOREO_CMD_SET_VOLUME, &volume, 1);
+}
+
+uint8_t DFRobot_Voreo::getVolume(void)
+{
+    uint8_t *pBuf = readData(VOREO_CMD_SET_VOLUME);
+    if (pBuf == NULL) {
+        return 0xFF;
+    }
+    uint8_t volume = pBuf[4];
+    free(pBuf);
+    return volume;
 }
 
 uint8_t DFRobot_Voreo::getASRState(void)

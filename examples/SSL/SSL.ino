@@ -52,6 +52,11 @@ void setup()
         delay(1000);
     }
     Serial.println("Voreo begin ok");
+
+    /* DOA mode: 0 off / 1 on / 2 LISTENING */
+    Serial.println(voreo.setDoaMode(VOREO_DOA_MODE_ON) ? "setDoaMode ok" : "setDoaMode fail");
+    Serial.print("DOA mode: ");
+    Serial.println(voreo.getDoaMode());
 }
 
 void loop()

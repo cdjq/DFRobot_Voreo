@@ -63,8 +63,13 @@ void setup()
     }
     Serial.println("Voreo begin ok");
 
-    voreo.setSpeed(5);   /* speed 1~5 */
+    voreo.setSpeed(5);  /* speed 1~5 */
     voreo.setVolume(5); /* volume 0~15 */
+    delay(200);
+    Serial.print("speed=");
+    Serial.print(voreo.getSpeed());
+    Serial.print(" volume=");
+    Serial.println(voreo.getVolume());
     Serial.println(voreo.sendText(text) ? "sendText ok, still waiting for the playback to complete..." : "sendText fail");
     delay(8000);
 }

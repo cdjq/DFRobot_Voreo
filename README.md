@@ -61,7 +61,7 @@ Example list:
 | `getASRToText` | TTS playback, volume / speed, and ASR text query |
 | `getASRState` | Read ASR state |
 | `setWakeUp` | Set wake-up word |
-| `SSL` | Sound source localization (angle) |
+| `SSL` | Sound source localization (angle) / DOA mode |
 
 ## Methods
 
@@ -112,6 +112,18 @@ Example list:
    uint16_t getAngle(void);
 
    /**
+    * @fn setDoaMode
+    * @brief Set DOA run mode (0 off / 1 on / 2 LISTENING)
+    */
+   uint8_t setDoaMode(uint8_t mode);
+
+   /**
+    * @fn getDoaMode
+    * @brief Query DOA run mode
+    */
+   uint8_t getDoaMode(void);
+
+   /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo module
     * @param speed Speech speed, range 1~5 (decimal)
@@ -120,6 +132,7 @@ Example list:
     * @retval 0 Failed
     */
    uint8_t setSpeed(uint8_t speed);
+   uint8_t getSpeed(void);
 
    /**
     * @fn setVolume
@@ -130,6 +143,7 @@ Example list:
     * @retval 0 Failed
     */
    uint8_t setVolume(uint8_t volume);
+   uint8_t getVolume(void);
 
    /**
     * @fn getASRState
