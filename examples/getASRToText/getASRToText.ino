@@ -1,7 +1,8 @@
 /*!
  * @file getASRToText.ino
- * @brief Get ASR to text / TTS playback example
- * @note Switch UART / I2C with VOREO_COMM_MODE below
+ * @brief ASR to text, TTS playback, and volume / speed demo
+ * @note Define I2C_COMMUNICATION for I2C; comment it out for UART
+ *       Speed 1~5, volume 0~15 (decimal)
  * ---------------------------------------------------------------------------------------------------------------
  *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
@@ -15,19 +16,20 @@
  * @copyright Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
  * @author    [TangJie](jie.tang@dfrobot.com)
- * @version 1.0
- * @date 2025-12-12
+ * @author    [RongLi](rong.li@dfrobot.com)
+ * @version 1.1
+ * @date 2026-11-10
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
 #include <DFRobot_Voreo.h>
 
-/* 通信模式：0=UART，1=I2C */
-#define VOREO_COMM_MODE_UART  0
-#define VOREO_COMM_MODE_I2C   1
-#define VOREO_COMM_MODE       VOREO_COMM_MODE_I2C
+/* use I2C for communication, but use the serial port for communication if the line of codes were masked */
+//#define I2C_COMMUNICATION  
 
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
+#if defined(I2C_COMMUNICATION)
+DFRobot_Voreo_I2C voreo;
+#else
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(/*rx=*/5, /*tx=*/4);
@@ -35,15 +37,13 @@ DFRobot_Voreo_UART voreo(&mySerial);
 #else
 DFRobot_Voreo_UART voreo(&Serial1);
 #endif
-#else
-DFRobot_Voreo_I2C voreo;
 #endif
+/*Cannot use spaces in the text*/
+char *text = "欢迎使用DFRobot Voreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
 
-// char *text = "欢迎使用DFRobotVoreo语音识别模块,该模块可以实现语音转文字和文字转语音的功能";
-char *text = "欢迎使用DFRobotVoreo语音识别模块";
 void setup()
 {
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
+#if !defined(I2C_COMMUNICATION)
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
     mySerial.begin(9600);
 #else
@@ -51,48 +51,29 @@ void setup()
 #endif
 #endif
     Serial.begin(115200);
-    delay(1000);
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
-    Serial.println("DFRobot_Voreo UART example");
+#if defined(I2C_COMMUNICATION)
+    Serial.println("Communication mode: I2C");
 #else
-    Serial.println("DFRobot_Voreo I2C example");
+    Serial.println("Communication mode: UART");
 #endif
+
     while (!voreo.begin()) {
-        Serial.println("Voreo begin failed");
+        Serial.println("Voreo begin failed, please check the connection");
         delay(1000);
     }
     Serial.println("Voreo begin ok");
-    delay(500);
 
-    /* 语速范围：0~15（十进制） */
-    Serial.println("setSpeed...");
-    voreo.setSpeed(4);
-    delay(500);
-
-    /* 音量范围：0~15（十进制） */
-    Serial.println("setVolume...");
-    voreo.setVolume(6);
-    delay(500);
-
-    Serial.println("sendText...");
-    Serial.println(voreo.sendText(text) ? "sendText ok" : "sendText fail");
-    Serial.println("TTS playing; then speak after wake");
+    voreo.setSpeed(5);   /* speed 1~5 */
+    voreo.setVolume(5); /* volume 0~15 */
+    Serial.println(voreo.sendText(text) ? "sendText ok, still waiting for the playback to complete..." : "sendText fail");
     delay(8000);
-    Serial.println(">>> READY: wake GTA and speak (short then long) <<<");
 }
 
 void loop()
 {
     if (voreo.queryText()) {
-        Serial.println("queryText hit, requestText...");
-        String asrText = voreo.requestText();
-        Serial.print("ASR len=");
-        Serial.print(asrText.length());
-        Serial.print(" text=");
-        Serial.println(asrText);
-        Serial.println(">>> speak again for next take (try LONGER sentence) <<<");
-    } else {
-        Serial.println("queryText: no text yet");
+        Serial.println(voreo.requestText());
     }
-    delay(500);
+    delay(1000);
+    Serial.println("After being awakened, speak....");
 }

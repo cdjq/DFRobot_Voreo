@@ -4,8 +4,9 @@
  * @copyright	Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
  * @author    [TangJie](jie.tang@dfrobot.com)
- * @version 1.0
- * @date 2025-12-12
+ * @author    [RongLi](rong.li@dfrobot.com)
+ * @version 1.1
+ * @date 2026-11-10
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
@@ -234,6 +235,68 @@ static uint16_t utf8SafeChunkLen(const uint8_t *s, uint16_t total, uint16_t maxL
     return (i == 0) ? 1 : i;
 }
 
+/** Common CJK/ASCII punctuation byte length; 0 if not punct (keep with current segment). */
+static uint16_t utf8PunctLen(const uint8_t *s, uint16_t avail)
+{
+    if (avail == 0) {
+        return 0;
+    }
+    uint8_t c = s[0];
+    if (c == ',' || c == '.' || c == '!' || c == '?' || c == ';' || c == ':') {
+        return 1;
+    }
+    if (avail >= 3) {
+        if (s[0] == 0xE3 && s[1] == 0x80 && (s[2] == 0x81 || s[2] == 0x82)) {
+            return 3; /* ideographic comma/period */
+        }
+        if (s[0] == 0xEF && s[1] == 0xBC &&
+            (s[2] == 0x8C || s[2] == 0x81 || s[2] == 0x9F || s[2] == 0x9B || s[2] == 0x9A)) {
+            return 3; /* fullwidth ,!?;: */
+        }
+    }
+    return 0;
+}
+
+/**
+ * TTS segment: UTF-8-safe hard cut, prefer break after punctuation;
+ * punctuation stays in this segment (and absorb trailing punct after cut).
+ */
+static uint16_t ttsSegmentLen(const uint8_t *s, uint16_t total, uint16_t maxLen)
+{
+    uint16_t hard = utf8SafeChunkLen(s, total, maxLen);
+    if (hard >= total) {
+        return total;
+    }
+    uint16_t minKeep = (hard > 16) ? (uint16_t)(hard / 4) : 0;
+    uint16_t best = 0;
+    uint16_t i = 0;
+    while (i < hard) {
+        uint16_t plen = utf8PunctLen(s + i, (uint16_t)(hard - i));
+        if (plen > 0) {
+            uint16_t after = (uint16_t)(i + plen);
+            if (after > minKeep && after <= hard) {
+                best = after;
+            }
+            i = after;
+            continue;
+        }
+        uint8_t cl = utf8CharByteLen(s[i]);
+        if ((uint16_t)(i + cl) > hard) {
+            break;
+        }
+        i = (uint16_t)(i + cl);
+    }
+    uint16_t n = (best > 0) ? best : hard;
+    while (n < total && n < maxLen) {
+        uint16_t plen = utf8PunctLen(s + n, (uint16_t)(total - n));
+        if (plen == 0 || (uint16_t)(n + plen) > maxLen) {
+            break;
+        }
+        n = (uint16_t)(n + plen);
+    }
+    return n;
+}
+
 uint8_t DFRobot_Voreo::sendText(uint8_t *pText)
 {
     if (pText == NULL) {
@@ -243,7 +306,7 @@ uint8_t DFRobot_Voreo::sendText(uint8_t *pText)
     uint16_t offset = 0;
     while (offset < total) {
         uint16_t remain = (uint16_t)(total - offset);
-        uint16_t chunk = utf8SafeChunkLen(pText + offset, remain, VOREO_TTS_PAYLOAD_MAX);
+        uint16_t chunk = ttsSegmentLen(pText + offset, remain, VOREO_TTS_PAYLOAD_MAX);
         if (chunk == 0) {
             return RETURN_ERROR;
         }
@@ -295,16 +358,18 @@ uint8_t DFRobot_Voreo::setWakeUp(String data)
 
 uint8_t DFRobot_Voreo::setSpeed(uint8_t speed)
 {
-    if (speed > VOREO_TTS_LEVEL_MAX) {
-        speed = VOREO_TTS_LEVEL_MAX;
+    if (speed < VOREO_TTS_SPEED_MIN) {
+        speed = VOREO_TTS_SPEED_MIN;
+    } else if (speed > VOREO_TTS_SPEED_MAX) {
+        speed = VOREO_TTS_SPEED_MAX;
     }
     return sendCommand(VOREO_CMD_SET_SPEED, &speed, 1);
 }
 
 uint8_t DFRobot_Voreo::setVolume(uint8_t volume)
 {
-    if (volume > VOREO_TTS_LEVEL_MAX) {
-        volume = VOREO_TTS_LEVEL_MAX;
+    if (volume > VOREO_TTS_VOLUME_MAX) {
+        volume = VOREO_TTS_VOLUME_MAX;
     }
     return sendCommand(VOREO_CMD_SET_VOLUME, &volume, 1);
 }

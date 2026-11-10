@@ -1,7 +1,7 @@
 /*!
  * @file setWakeUp.ino
  * @brief Set wake-up word example
- * @note Switch UART / I2C with VOREO_COMM_MODE below
+ * @note Define I2C_COMMUNICATION for I2C; comment it out for UART
  * ---------------------------------------------------------------------------------------------------------------
  *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
@@ -15,19 +15,19 @@
  * @copyright Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
  * @author    [TangJie](jie.tang@dfrobot.com)
- * @version 1.0
- * @date 2025-12-12
+ * @author    [RongLi](rong.li@dfrobot.com)
+ * @version 1.1
+ * @date 2026-11-10
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 
 #include <DFRobot_Voreo.h>
 
-/* 通信模式：0=UART，1=I2C */
-#define VOREO_COMM_MODE_UART  0
-#define VOREO_COMM_MODE_I2C   1
-#define VOREO_COMM_MODE       VOREO_COMM_MODE_UART
+//#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
 
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
+#if defined(I2C_COMMUNICATION)
+DFRobot_Voreo_I2C voreo;
+#else
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(/*rx=*/5, /*tx=*/4);
@@ -35,13 +35,11 @@ DFRobot_Voreo_UART voreo(&mySerial);
 #else
 DFRobot_Voreo_UART voreo(&Serial1);
 #endif
-#else
-DFRobot_Voreo_I2C voreo;
 #endif
 
 void setup()
 {
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
+#if !defined(I2C_COMMUNICATION)
 #if defined(ARDUINO_AVR_UNO) || defined(ESP8266)
     mySerial.begin(9600);
 #else
@@ -49,26 +47,19 @@ void setup()
 #endif
 #endif
     Serial.begin(115200);
-#if VOREO_COMM_MODE == VOREO_COMM_MODE_UART
-    Serial.println("DFRobot_Voreo UART example");
-#else
-    Serial.println("DFRobot_Voreo I2C example");
-#endif
     while (!voreo.begin()) {
         Serial.println("Voreo begin failed");
         delay(1000);
     }
-    /* 语速范围：0~15（十进制） */
-    voreo.setSpeed(4);
-    delay(200);
-    /* 音量范围：0~15（十进制） */
-    voreo.setVolume(3);
-    delay(200);
-    voreo.setWakeUp("kai deng");
+    voreo.setWakeUp("hcLb qdMZ");//hello james
     Serial.println("setWakeUp done");
 }
 
 void loop()
 {
-    delay(100);
+    if (voreo.queryText()) {
+        Serial.println(voreo.requestText());
+    }
+    delay(1000);
+    Serial.println("Still waiting for the wake-up word...");
 }

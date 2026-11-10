@@ -6,8 +6,9 @@
 @copyright Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
 @license The MIT License (MIT)
 @author [TangJie](jie.tang@dfrobot.com)
-@version 1.0
-@date 2025-12-12
+@author [RongLi](rong.li@dfrobot.com)
+@version 1.1
+@date 2026-11-10
 @url https://github.com/DFRobot/DFRobot_Voreo
 
 This example demonstrates how to use DFRobot_Voreo with UART interface on Raspberry Pi.

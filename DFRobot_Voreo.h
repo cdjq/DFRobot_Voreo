@@ -4,8 +4,9 @@
  * @copyright	Copyright (c) 2025 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license   The MIT License (MIT)
  * @author    [TangJie](jie.tang@dfrobot.com)
- * @version 1.0
- * @date 2025-12-12
+ * @author    [RongLi](rong.li@dfrobot.com)
+ * @version 1.1
+ * @date 2026-11-10
  * @url       https://github.com/DFRobot/DFRobot_Voreo
  */
 #ifndef __DFROBOT_VOREO_H__
@@ -26,12 +27,14 @@
 #define VOREO_CMD_ANGLE             (0x04) ///< Angle command
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
-#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (0~15)
+#define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (1~5)
 #define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Get ASR state command
 #define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0~15)
 
-#define VOREO_TTS_LEVEL_MIN         (0)    ///< TTS volume/speed minimum (decimal)
-#define VOREO_TTS_LEVEL_MAX         (15)   ///< TTS volume/speed maximum (decimal)
+#define VOREO_TTS_SPEED_MIN         (1)    ///< TTS speed minimum (decimal)
+#define VOREO_TTS_SPEED_MAX         (5)    ///< TTS speed maximum (decimal)
+#define VOREO_TTS_VOLUME_MIN        (0)    ///< TTS volume minimum (decimal)
+#define VOREO_TTS_VOLUME_MAX        (15)   ///< TTS volume maximum (decimal)
 
 /**
  * I2C register mailbox (Write [reg][data…]; Write [reg] then Read)
@@ -131,7 +134,7 @@ public:
    /**
     * @fn sendText
     * @brief Send TTS text (UTF-8). Longer text is split into <=128B segments on
-    *        UTF-8 character boundaries (1/2/3/4-byte; Chinese typically 3B).
+    *        UTF-8 boundaries, preferring punctuation kept with the preceding segment.
     * @param pText The text to send
     * @return The result of the send
     * @retval 1 Success
@@ -151,7 +154,7 @@ public:
    /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo
-    * @param speed Speech speed, range 0~15 (decimal; values above max are clamped)
+    * @param speed Speech speed, range 1~5 (decimal; out-of-range values are clamped)
     * @return The result of the set speed
     * @retval 1 Success
     * @retval 0 Failed

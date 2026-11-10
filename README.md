@@ -24,8 +24,8 @@ This is a speech-to-text and text-to-speech module.
 ## Overview
 
   * This is a speech-to-text and text-to-speech module.
-  * Supports UART and I2C. Examples switch mode with the `VOREO_COMM_MODE` macro.
-  * Supports TTS volume and speech-speed control (decimal range `0`~`15`).
+  * Supports UART and I2C. Examples switch mode with the `I2C_COMMUNICATION` macro.
+  * Supports TTS volume (`0`~`15`) and speech-speed (`1`~`5`) control.
   * TTS: max **128 bytes** UTF-8 per packet; `sendText()` auto-splits on UTF-8 char boundaries.
   * ASR: max **4096 bytes** UTF-8 per frame; each GTA `A2` frame replaces previous storage.
   * I2C register mailbox: write app frame to `FIFO(0x10)`; poll `STATUS(0x00)` read 3 bytes; read payload via `DATA(0x03)`.
@@ -39,14 +39,11 @@ Before using this library, please first download the library file, paste it into
 All Arduino examples under `examples/` share the same UART / I2C switch:
 
 ```C++
-/* Communication mode: 0 = UART, 1 = I2C */
-#define VOREO_COMM_MODE_UART  0
-#define VOREO_COMM_MODE_I2C   1
-#define VOREO_COMM_MODE       VOREO_COMM_MODE_UART
+#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
 ```
 
-- Set `VOREO_COMM_MODE` to `VOREO_COMM_MODE_UART` for UART (default).
-- Set `VOREO_COMM_MODE` to `VOREO_COMM_MODE_I2C` for I2C (address `0x1F`).
+- Define `I2C_COMMUNICATION` to use I2C (address `0x1F`).
+- Comment out / mask that line to use UART.
 
 ### I2C transport notes
 
@@ -61,11 +58,10 @@ Example list:
 
 | Example | Description |
 | ------- | ----------- |
-| `getASRToText` | TTS playback and ASR text query |
+| `getASRToText` | TTS playback, volume / speed, and ASR text query |
 | `getASRState` | Read ASR state |
 | `setWakeUp` | Set wake-up word |
 | `SSL` | Sound source localization (angle) |
-| `setVolumeAndSpeed` | Set TTS volume / speed, then play text |
 
 ## Methods
 
@@ -118,7 +114,7 @@ Example list:
    /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo module
-    * @param speed Speech speed, range 0~15 (decimal)
+    * @param speed Speech speed, range 1~5 (decimal)
     * @return The result of setting the speed
     * @retval 1 Success
     * @retval 0 Failed
@@ -165,15 +161,18 @@ Arduino Uno        |      √       |              |             |
 
 ## History
 
+- 2026/11/10 - Version 1.1.0
+  - TTS speed range `1`~`5`; merge volume/speed demo into `getASRToText`
+  - Author: RongLi(rong.li@dfrobot.com)
 - 2026/10/20 - Version 1.0.3
   - TTS max 128B with UTF-8-safe `sendText()` split; ASR frame max 4KB
 - 2026/10/20 - Version 1.0.2
   - Redesign I2C transport: STATUS 3-byte poll, 28-byte chunks, `uint16_t` payload length
 - 2026/10/20 - Version 1.0.1
-  - Merge UART / I2C demos; switch with `VOREO_COMM_MODE`
+  - Merge UART / I2C demos; switch with `I2C_COMMUNICATION`
   - Implement `setSpeed()`, add `setVolume()`
 - 2025/12/12 - Version 1.0.0
 
 ## Credits
 
-Written by TangJie(jie.tang@dfrobot.com), 2025. (Welcome to our [website](https://www.dfrobot.com/))
+Written by TangJie(jie.tang@dfrobot.com), RongLi(rong.li@dfrobot.com), 2025-2026. (Welcome to our [website](https://www.dfrobot.com/))
