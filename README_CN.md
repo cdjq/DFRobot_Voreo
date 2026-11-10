@@ -61,7 +61,7 @@
 | `getASRToText` | TTS 播报、音量 / 语速与 ASR 文本查询 |
 | `getASRState` | 读取 ASR 状态 |
 | `setWakeUp` | 设置唤醒词 |
-| `SSL` | 声源定位（角度 / 强度）/ DOA 模式 |
+| `getDOA` | DOA 模式 / 角度 / 强度 |
 
 ## 方法
 

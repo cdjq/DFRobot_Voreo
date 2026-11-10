@@ -23,7 +23,8 @@
 
 #include <DFRobot_Voreo.h>
 
-//#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
+/* use I2C for communication, but use the serial port for communication if the line of codes were masked */
+//#define I2C_COMMUNICATION  
 
 #if defined(I2C_COMMUNICATION)
 DFRobot_Voreo_I2C voreo;
@@ -47,10 +48,17 @@ void setup()
 #endif
 #endif
     Serial.begin(115200);
+#if defined(I2C_COMMUNICATION)
+    Serial.println("Communication mode: I2C");
+#else
+    Serial.println("Communication mode: UART");
+#endif
+
     while (!voreo.begin()) {
-        Serial.println("Voreo begin failed");
+        Serial.println("Voreo begin failed, please check the connection");
         delay(1000);
     }
+    Serial.println("Voreo begin ok");
     voreo.setWakeUp("hcLb qdMZ");//hello james
     Serial.println("setWakeUp done");
 }

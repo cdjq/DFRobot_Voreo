@@ -61,7 +61,7 @@ Example list:
 | `getASRToText` | TTS playback, volume / speed, and ASR text query |
 | `getASRState` | Read ASR state |
 | `setWakeUp` | Set wake-up word |
-| `SSL` | Sound source localization (angle / intensity) / DOA mode |
+| `getDOA` | DOA mode / angle / intensity |
 
 ## Methods
 
