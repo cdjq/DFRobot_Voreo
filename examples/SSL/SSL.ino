@@ -62,6 +62,8 @@ void setup()
 void loop()
 {
     Serial.print("Angle: ");
-    Serial.println(voreo.getAngle());
+    Serial.print(voreo.getAngle());
+    Serial.print(" intensity: ");
+    Serial.println(voreo.getDoaIntensity()); /* <VAD->0, >=VAD log->1~255 */
     delay(200);
 }

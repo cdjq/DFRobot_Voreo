@@ -357,6 +357,18 @@ uint8_t DFRobot_Voreo::getDoaMode(void)
     return mode;
 }
 
+uint8_t DFRobot_Voreo::getDoaIntensity(void)
+{
+    /* UART / I2C app-frame path: CMD 0x0B, reply payload 1 byte */
+    uint8_t *pBuf = readData(VOREO_CMD_DOA_INTENSITY);
+    if (pBuf == NULL) {
+        return 0;
+    }
+    uint8_t intensity = pBuf[4];
+    free(pBuf);
+    return intensity;
+}
+
 uint8_t DFRobot_Voreo::setWakeUp(uint8_t* pData)
 {
     if (pData == NULL) {
@@ -451,6 +463,23 @@ uint8_t DFRobot_Voreo_I2C::begin(void)
     _pWire->setWireTimeout(3000UL, true);
 #endif
     return DFRobot_Voreo::begin();
+}
+
+uint8_t DFRobot_Voreo_I2C::getDoaIntensity(void)
+{
+    /* I2C preferred: Write [0x06] then Read 1 byte */
+    _pWire->beginTransmission(VOREO_I2C_ADDR);
+    _pWire->write((uint8_t)VOREO_REG_DOA_INTENSITY);
+    if (_pWire->endTransmission() != 0) {
+        DBG("DOA intensity reg select failed");
+        return 0;
+    }
+    delay(30);
+    if (_pWire->requestFrom((uint8_t)VOREO_I2C_ADDR, (uint8_t)1) != (uint8_t)1) {
+        DBG("DOA intensity read failed");
+        return 0;
+    }
+    return _pWire->read();
 }
 
 uint8_t DFRobot_Voreo_I2C::writeRaw(const uint8_t *data, uint16_t len)

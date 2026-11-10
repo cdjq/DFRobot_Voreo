@@ -31,6 +31,7 @@
 #define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Query RGB/device state (rgb_sm_state_t, non-consuming)
 #define VOREO_CMD_SET_VOLUME        (0x09) ///< TTS volume: query LEN=0; set LEN=1 (0~15)
 #define VOREO_CMD_DOA_MODE          (0x0A) ///< DOA mode: query LEN=0; set LEN=1 (0 off / 1 on / 2 LISTENING)
+#define VOREO_CMD_DOA_INTENSITY     (0x0B) ///< DOA intensity query (app frame); reply 1 byte 0~255
 
 #define VOREO_TTS_SPEED_MIN         (1)    ///< TTS speed minimum (decimal)
 #define VOREO_TTS_SPEED_MAX         (5)    ///< TTS speed maximum (decimal)
@@ -46,6 +47,7 @@
  *  0x00 STATUS R — read 3: [status][len_h][len_l]
  *  0x03 DATA   R — response stream
  *  0x04 CTRL   W — 0x2F ABORT
+ *  0x06 DOA intensity R — write select then read 1 byte (<VAD→0, ≥VAD log→1~255)
  *  0x10 FIFO   W — app frame 0x55|LEN|CMD|DATA|CRC
  */
 #define VOREO_REG_STATUS            (0x00)
@@ -53,6 +55,7 @@
 #define VOREO_REG_LEN_L             (0x02)
 #define VOREO_REG_DATA              (0x03)
 #define VOREO_REG_CTRL              (0x04)
+#define VOREO_REG_DOA_INTENSITY     (0x06) ///< DOA intensity (I2C direct); write select then read 1B
 #define VOREO_REG_FIFO              (0x10)
 #define VOREO_REG_CTRL_ABORT        (0x2F)
 
@@ -178,6 +181,14 @@ public:
    uint8_t getDoaMode(void);
 
    /**
+    * @fn getDoaIntensity
+    * @brief Query quantized DOA intensity
+    * @note UART / I2C app frame CMD 0x0B; I2C preferred path is REG 0x06
+    * @return Intensity: <VAD -> 0; >=VAD -> log-quantized 1~255; comm fail -> 0
+    */
+   virtual uint8_t getDoaIntensity(void);
+
+   /**
     * @fn setSpeed
     * @brief Set the TTS speech speed of the Voreo (CMD 0x07, LEN=1)
     * @param speed Speech speed, range 1~5 (decimal; out-of-range values are clamped)
@@ -264,6 +275,10 @@ public:
     virtual uint8_t sendCommand(uint8_t cmd, uint8_t *pData, uint16_t dataLength);
 
     virtual uint8_t *readData(uint8_t cmd);
+    /**
+     * @brief I2C: write-select REG 0x06 then read 1 byte
+     */
+    virtual uint8_t getDoaIntensity(void);
 private:
     TwoWire *_pWire = NULL;
     uint8_t writeRaw(const uint8_t *data, uint16_t len);

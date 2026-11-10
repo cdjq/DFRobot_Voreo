@@ -61,7 +61,7 @@
 | `getASRToText` | TTS 播报、音量 / 语速与 ASR 文本查询 |
 | `getASRState` | 读取 ASR 状态 |
 | `setWakeUp` | 设置唤醒词 |
-| `SSL` | 声源定位（角度）/ DOA 模式 |
+| `SSL` | 声源定位（角度 / 强度）/ DOA 模式 |
 
 ## 方法
 
@@ -122,6 +122,13 @@
     * @brief 查询 DOA 运行模式
     */
    uint8_t getDoaMode(void);
+
+   /**
+    * @fn getDoaIntensity
+    * @brief 查询 DOA 强度（<VAD -> 0；≥VAD 对数量化 1~255）
+    * @note UART/I2C 应用帧 0x0B；I2C 优先寄存器 0x06
+    */
+   uint8_t getDoaIntensity(void);
 
    /**
     * @fn setSpeed

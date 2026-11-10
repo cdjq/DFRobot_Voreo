@@ -61,7 +61,7 @@ Example list:
 | `getASRToText` | TTS playback, volume / speed, and ASR text query |
 | `getASRState` | Read ASR state |
 | `setWakeUp` | Set wake-up word |
-| `SSL` | Sound source localization (angle) / DOA mode |
+| `SSL` | Sound source localization (angle / intensity) / DOA mode |
 
 ## Methods
 
@@ -122,6 +122,13 @@ Example list:
     * @brief Query DOA run mode
     */
    uint8_t getDoaMode(void);
+
+   /**
+    * @fn getDoaIntensity
+    * @brief Query DOA intensity (<VAD -> 0; >=VAD log-quantized 1~255)
+    * @note UART/I2C app frame 0x0B; I2C preferred REG 0x06
+    */
+   uint8_t getDoaIntensity(void);
 
    /**
     * @fn setSpeed
