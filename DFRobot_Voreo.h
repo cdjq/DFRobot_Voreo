@@ -28,7 +28,7 @@
 #define VOREO_CMD_DISTANCE          (0x05) ///< Distance command
 #define VOREO_CMD_WAKE_UP           (0x06) ///< Wake up command
 #define VOREO_CMD_SET_SPEED         (0x07) ///< Set TTS speed command (1~5)
-#define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Get ASR state command
+#define VOREO_CMD_GET_ASR_STATE     (0x08) ///< Query RGB/device state (rgb_sm_state_t, non-consuming)
 #define VOREO_CMD_SET_VOLUME        (0x09) ///< Set TTS volume command (0~15)
 
 #define VOREO_TTS_SPEED_MIN         (1)    ///< TTS speed minimum (decimal)
@@ -184,11 +184,16 @@ public:
    
    /**
     * @fn getASRState
-    * @brief Get the ASR state of the Voreo
-    * @return The result of the get ASR state
-    * @retval 0 ASR is not working
-    * @retval 1 ASR is working
-    * @retval 2 ASR is working end
+    * @brief Query RGB/device state (same source as AT+STATE?, non-consuming)
+    * @return rgb_sm_state_t value
+    * @retval 0 BOOTING
+    * @retval 1 STANDBY
+    * @retval 2 LISTENING
+    * @retval 3 TTS
+    * @retval 4 WAKEWORD_LEARNING
+    * @retval 5 WAKEWORD_LEARN_OK
+    * @retval 6 WAKEWORD_LEARN_FAIL
+    * @retval 7 BOOT_FAIL
     */
    uint8_t getASRState(void);
 

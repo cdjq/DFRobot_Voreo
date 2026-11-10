@@ -57,7 +57,19 @@ void setup()
 void loop()
 {
     uint8_t state = voreo.getASRState();
-    Serial.print("ASR state: ");
-    Serial.println(state); /* 0 idle, 1 working, 2 end */
-    delay(100);
+    Serial.print("Device state: ");
+    Serial.print(state);
+    Serial.print(" ");
+    switch (state) {
+        case 0: Serial.println("BOOTING"); break;
+        case 1: Serial.println("STANDBY"); break;
+        case 2: Serial.println("LISTENING"); break;
+        case 3: Serial.println("TTS"); break;
+        case 4: Serial.println("WAKEWORD_LEARNING"); break;
+        case 5: Serial.println("WAKEWORD_LEARN_OK"); break;
+        case 6: Serial.println("WAKEWORD_LEARN_FAIL"); break;
+        case 7: Serial.println("BOOT_FAIL"); break;
+        default: Serial.println("UNKNOWN"); break;
+    }
+    delay(500);
 }

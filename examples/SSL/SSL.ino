@@ -23,7 +23,7 @@
 
 #include <DFRobot_Voreo.h>
 
-#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
+// #define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
 
 #if defined(I2C_COMMUNICATION)
 DFRobot_Voreo_I2C voreo;
